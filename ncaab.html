@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NCAAB Edge Finder — Live Model</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08090c;--bg-card:#0e1017;--bg-card-hover:#141722;--bg-elevated:#111420;
+  --border:#1a1e2a;--border-bright:#2a3045;
+  --text:#e8eaf0;--text-dim:#6b7394;--text-muted:#3d4460;
+  --green:#00e87b;--green-dim:#00e87b22;--green-glow:#00e87b15;
+  --red:#ff3b5c;--red-dim:#ff3b5c22;
+  --amber:#ffb224;--amber-dim:#ffb22422;
+  --blue:#3b82f6;--blue-dim:#3b82f622;
+  --cyan:#06b6d4;--cyan-dim:#06b6d422;
+  --purple:#a855f7;--purple-dim:#a855f722;
+  --font-display:'Outfit',sans-serif;--font-mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.06;pointer-events:none;z-index:0}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;background:#08090cee;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:26px;height:26px;background:var(--green);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.nav-logo-text{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text);letter-spacing:2px;text-transform:uppercase}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s;padding:4px 0}
+.nav-links a:hover{color:var(--text)}
+.nav-links a.active{color:var(--green);border-bottom:2px solid var(--green)}
+
+.page{position:relative;z-index:1;max-width:1380px;margin:0 auto;padding:80px 28px 60px}
+
+.model-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;flex-wrap:wrap;gap:20px}
+.model-header-left{flex:1;min-width:280px}
+.model-badge{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:12px;font-weight:500;background:var(--green-dim);color:var(--green);border:1px solid #00e87b33}
+.model-title{font-size:clamp(28px,3.5vw,42px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:8px}
+.model-title .accent{color:var(--green)}
+.model-meta{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.model-meta-item{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.date-nav{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.date-btn{font-family:var(--font-mono);font-size:11px;letter-spacing:.5px;background:var(--bg-card);color:var(--text-dim);border:1px solid var(--border);padding:7px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
+.date-btn:hover{border-color:var(--border-bright);color:var(--text)}
+.date-btn.active{background:var(--green-dim);color:var(--green);border-color:#00e87b44}
+.date-arrow{font-family:var(--font-mono);font-size:16px;background:none;border:1px solid var(--border);color:var(--text-dim);width:32px;height:32px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.date-arrow:hover{border-color:var(--border-bright);color:var(--text)}
+.date-arrow:disabled{opacity:.25;cursor:default}
+
+.stats-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;margin-bottom:24px}
+.stat-cell{background:var(--bg-card);padding:16px 12px;text-align:center;transition:background .2s}
+.stat-cell:hover{background:var(--bg-card-hover)}
+.stat-value{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--green);margin-bottom:2px}
+.stat-value.neutral{color:var(--text)}
+.stat-value.red{color:var(--red)}
+.stat-label{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px}
+
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab-btn{font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);background:none;border:none;padding:12px 18px;cursor:pointer;transition:all .2s;position:relative}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--green)}
+.tab-btn.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--green)}
+.tab-count{font-size:9px;background:var(--bg-elevated);color:var(--text-muted);padding:2px 6px;border-radius:10px;margin-left:6px}
+
+.section{display:none}
+.section.visible{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.table-wrap{background:var(--bg-card);border-radius:8px;border:1px solid var(--border);overflow:hidden}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px}
+thead th{text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:400;letter-spacing:1px;text-transform:uppercase;font-size:9px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--bg-card);z-index:2}
+tbody td{padding:9px 12px;border-bottom:1px solid #0d0f16;color:var(--text-dim);white-space:nowrap}
+tbody tr{transition:background .15s}
+tbody tr:hover td{background:var(--bg-card-hover);color:var(--text)}
+.win{color:var(--green);font-weight:500}
+.loss{color:var(--red);font-weight:500}
+.pending{color:var(--text-muted)}
+
+.edge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin-bottom:16px}
+.edge-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;transition:all .25s}
+.edge-card:hover{border-color:var(--border-bright);background:var(--bg-card-hover);transform:translateY(-1px)}
+.edge-card.caution{border-left:3px solid var(--amber)}
+.edge-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.edge-matchup{font-size:14px;font-weight:600;line-height:1.4}
+.edge-matchup .vs{color:var(--text-muted);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.edge-conf{font-family:var(--font-mono);font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:4px;font-weight:500;text-transform:uppercase}
+.conf-HIGH{background:var(--green-dim);color:var(--green)}
+.conf-MEDIUM,.conf-MED{background:var(--amber-dim);color:var(--amber)}
+.conf-LOW{background:var(--blue-dim);color:var(--blue)}
+.edge-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-family:var(--font-mono);font-size:11px}
+.edge-label{color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-size:10px}
+.edge-val{color:var(--text);font-weight:500}
+.edge-val.green{color:var(--green)}
+.edge-val.amber{color:var(--amber)}
+.edge-divider{border:none;border-top:1px solid var(--border);margin:6px 0}
+.edge-signals{display:flex;gap:5px;margin-top:8px;align-items:center}
+.edge-signal{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.edge-signal.off{background:var(--text-muted)}
+.edge-signal-label{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-left:4px}
+.edge-star{font-family:var(--font-mono);font-size:10px;color:var(--cyan);margin-top:8px;padding:4px 8px;background:var(--cyan-dim);border-radius:4px;display:inline-block}
+.edge-result{font-family:var(--font-mono);font-size:11px;font-weight:600;margin-top:8px;padding:4px 10px;border-radius:4px;display:inline-block}
+.edge-result.W{background:var(--green-dim);color:var(--green)}
+.edge-result.L{background:var(--red-dim);color:var(--red)}
+.edge-result.P{background:#1a1e2a;color:var(--text-muted)}
+
+.caution-divider{font-family:var(--font-mono);font-size:10px;color:var(--amber);letter-spacing:2px;text-transform:uppercase;padding:14px 0 8px;border-top:1px dashed var(--amber-dim);margin-top:10px;display:flex;align-items:center;gap:8px}
+.caution-divider::before{content:'⚠'}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;letter-spacing:1px}
+
+/* MOBILE GAME CARDS (hidden on desktop, shown on mobile) */
+.game-cards{display:none}
+.gc{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:6px}
+.gc.edge{border-left:3px solid var(--green)}
+.gc-top{display:flex;justify-content:space-between;align-items:center}
+.gc-game{font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px}
+.gc-game .vs{color:var(--text-muted);font-size:10px}
+.gc-score{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);white-space:nowrap}
+.gc-score.win{color:var(--green)}.gc-score.loss{color:var(--red)}
+.gc-time{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);white-space:nowrap}
+.gc-pick{display:flex;gap:8px;align-items:center;margin-top:6px;font-family:var(--font-mono);font-size:11px;color:var(--text)}
+.gc-edge{color:var(--green);font-weight:500}
+.loading{text-align:center;padding:40px;font-family:var(--font-mono);font-size:12px;color:var(--text-muted)}
+.loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--border-bright);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:900px){
+  .stats-strip{grid-template-columns:repeat(3,1fr)}
+  .edge-grid{grid-template-columns:1fr}
+  .model-header{flex-direction:column}
+  .date-nav{width:100%;justify-content:center}
+  nav{padding:12px 16px}
+  .page{padding:72px 12px 40px}
+  .nav-links a:not(.active){display:none}
+  .model-title{font-size:28px}
+  .tab-btn{padding:10px 12px;font-size:10px;letter-spacing:.8px}
+  .tab-count{font-size:8px;padding:1px 4px}
+  /* Switch tables to cards on mobile */
+  .table-wrap{display:none}
+  .game-cards{display:block}
+}
+@media(max-width:600px){
+  .stats-strip{grid-template-columns:repeat(2,1fr)}
+  .stat-cell{padding:12px 8px}
+  .stat-value{font-size:18px}
+  .stat-label{font-size:8px;letter-spacing:1px}
+  .tab-btn{padding:8px 8px;font-size:9px;letter-spacing:.5px}
+  .tab-count{display:none}
+  .model-badge{font-size:9px}
+  .model-title{font-size:24px}
+  .model-meta{gap:12px}
+  .model-meta-item{font-size:10px}
+  .date-btn{padding:6px 10px;font-size:10px}
+  .date-arrow{width:28px;height:28px;font-size:14px}
+  .edge-card{padding:14px}
+  .edge-matchup{font-size:12px}
+  .edge-row{font-size:10px}
+  .edge-label{font-size:9px}
+  .edge-conf{font-size:8px;padding:2px 6px}
+  .edge-star{font-size:9px;padding:3px 6px}
+  nav .nav-logo-text{font-size:11px;letter-spacing:1px}
+  nav .nav-logo-icon{width:22px;height:22px}
+  .gc{padding:10px 12px}
+  .gc-game{font-size:12px}
+  .gc-pick{font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav>
+  <a href="index.html" class="nav-logo"><div class="nav-logo-icon"></div><span class="nav-logo-text">Edge Finder</span></a>
+  <div class="nav-links">
+    <a href="ncaab.html" class="active">NCAAB</a>
+    <a href="mlb.html">MLB</a>
+    <a href="stonks.html">Stonks</a>
+    <a href="record.html">Record</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="model-header">
+    <div class="model-header-left">
+      <div class="model-badge">NCAAB Edge Finder · v3.2</div>
+      <div class="model-title">College Basketball <span class="accent">Edges</span></div>
+      <div class="model-meta">
+        <div class="model-meta-item"><div class="dot-live"></div>Model Active</div>
+        <div class="model-meta-item" id="meta-version">4-Signal · 7-Book</div>
+        <div class="model-meta-item" id="meta-timestamp">—</div>
+      </div>
+    </div>
+    <div class="date-nav">
+      <button class="date-arrow" id="date-prev" title="Previous day">‹</button>
+      <div id="date-buttons" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <button class="date-arrow" id="date-next" title="Next day">›</button>
+    </div>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat-cell"><div class="stat-value" id="stat-record">—</div><div class="stat-label">Model Record</div></div>
+    <div class="stat-cell"><div class="stat-value" id="stat-winrate">—</div><div class="stat-label">Win Rate</div></div>
+    <div class="stat-cell"><div class="stat-value" id="stat-edges">—</div><div class="stat-label">Edges Today</div></div>
+    <div class="stat-cell"><div class="stat-value" id="stat-games">—</div><div class="stat-label">Games Today</div></div>
+    <div class="stat-cell"><div class="stat-value" id="stat-sweet">—</div><div class="stat-label">Sweet Spot 0-10</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="edges">Edge Picks <span class="tab-count" id="cnt-edges">0</span></button>
+    <button class="tab-btn" data-tab="games">All Games <span class="tab-count" id="cnt-games">0</span></button>
+    <button class="tab-btn" data-tab="history">Daily Picks</button>
+    <button class="tab-btn" data-tab="cumulative">Cumulative</button>
+  </div>
+
+  <div class="section visible" id="tab-edges"><div id="edges-container"><div class="loading">Loading edges</div></div></div>
+  <div class="section" id="tab-games"><div id="games-container"><div class="loading">Loading games</div></div></div>
+  <div class="section" id="tab-history"><div id="history-container"><div class="loading">Loading picks</div></div></div>
+  <div class="section" id="tab-cumulative"><div id="cumulative-container"><div class="loading">Loading stats</div></div></div>
+</div>
+
+<script>
+const AVAILABLE_DATES = [];
+let currentDate = todayStr();
+let historyData = null;
+
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtDate(s){const[y,m,d]=s.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return mo[parseInt(m)-1]+' '+parseInt(d)}
+function fmtShort(s){const[y,m,d]=s.split('-');return parseInt(m)+'/'+parseInt(d)}
+function fmtPct(v,dec=1){return v!=null?v.toFixed(dec)+'%':'—'}
+function fmtOdds(v){if(v==null)return'—';if(v<=-10000)return'-9999';if(v>=10000)return'+9999';return v>0?'+'+v:''+v}
+function probToML(p){if(p==null)return'—';if(p>=50)return'-'+Math.round(p/(100-p)*100);return'+'+Math.round((100-p)/p*100)}
+function shortTeam(s){return s.replace(/ (Ramblers|Spiders|Longhorns|Rebels|Hoosiers|Wildcats|Cowboys|Golden Eagles|Musketeers|Bears|Hornets|Lumberjacks|Tigers|Green Wave|Cardinals|Mustangs|Huskies|Trojans|Panthers|Bulldogs|Hawks|Bobcats|Terriers|Owls|Bruins|Mountaineers|Billikens|Monarchs|Blue Hens|Aggies|Cougars|Razorbacks|Crimson Tide|Yellow Jackets|Demon Deacons|Blue Devils|Wolfpack|Tar Heels|Cavaliers|Hokies|Seminoles|Hurricanes|Orange|Fighting Irish|Spartans|Wolverines|Hawkeyes|Cornhuskers|Boilermakers|Buckeyes|Badgers|Golden Gophers|Illini|Nittany Lions|Terrapins|Scarlet Knights|Jayhawks|Cyclones|Sooners|Red Raiders|Horned Frogs|Bearcats|Bison|Thundering Herd|Flyers|Peacocks|Gaels|Phoenix|Redbirds|Shockers|Hilltoppers|Leathernecks|Penguins|Great Danes|Catamounts|Bonnies|Explorers|Dukes|Colonials|Stags|Friars|Hoyas|Johnnies|Red Storm|Mavericks|Mean Green|Roadrunners|Miners|Islanders|Jaguars|Gamecocks|Volunteers|Commodores|Gators|Dawgs|Chanticleers|Paladins|Keydets|Rams|Retrievers|Seawolves|Tribe|Pride|Flames)$/i,'').trim()}
+function confClass(c){if(!c)return'';return'conf-'+c.toUpperCase().replace('MEDIUM','MED')}
+
+async function loadJSON(f){try{const r=await fetch('data/'+f+'?t='+Date.now());if(!r.ok){console.warn('Failed to load',f,r.status);return null}return await r.json()}catch(e){console.warn('Error loading',f,e);return null}}
+
+// ─── DATE NAV ─────────────────────────────────────────
+function discoverDatesFromHistory(){
+  // Use pick_history.json (already loaded) to find available dates
+  if(historyData?.daily_results){
+    const dates=Object.keys(historyData.daily_results).sort();
+    dates.forEach(d=>{if(!AVAILABLE_DATES.includes(d))AVAILABLE_DATES.push(d)});
+  }
+  // Always include today
+  const today=todayStr();
+  if(!AVAILABLE_DATES.includes(today))AVAILABLE_DATES.push(today);
+  AVAILABLE_DATES.sort();
+  console.log('Available dates:', AVAILABLE_DATES);
+  if(AVAILABLE_DATES.includes(today))currentDate=today;
+  else if(AVAILABLE_DATES.length)currentDate=AVAILABLE_DATES[AVAILABLE_DATES.length-1];
+  renderDateNav();
+}
+
+// After loading games data, check if it contains games for additional dates and add them
+function addExtraDates(gamesData){
+  if(!gamesData?.games)return;
+  const extraDates=new Set();
+  gamesData.games.forEach(g=>{
+    if(g.game_date&&!AVAILABLE_DATES.includes(g.game_date))extraDates.add(g.game_date);
+  });
+  if(extraDates.size){
+    extraDates.forEach(d=>AVAILABLE_DATES.push(d));
+    AVAILABLE_DATES.sort();
+    console.log('Added extra dates from games:', [...extraDates]);
+    renderDateNav();
+  }
+}
+
+function renderDateNav(){
+  const c=document.getElementById('date-buttons');
+  c.innerHTML=AVAILABLE_DATES.map(d=>`<button class="date-btn${d===currentDate?' active':''}" data-date="${d}">${d===todayStr()?'Today':fmtShort(d)}</button>`).join('');
+  c.querySelectorAll('.date-btn').forEach(b=>b.addEventListener('click',()=>selectDate(b.dataset.date)));
+  const idx=AVAILABLE_DATES.indexOf(currentDate);
+  document.getElementById('date-prev').disabled=idx<=0;
+  document.getElementById('date-next').disabled=idx>=AVAILABLE_DATES.length-1;
+}
+
+function selectDate(d){currentDate=d;renderDateNav();loadDateData()}
+
+document.getElementById('date-prev').addEventListener('click',()=>{
+  const i=AVAILABLE_DATES.indexOf(currentDate);if(i>0)selectDate(AVAILABLE_DATES[i-1]);
+});
+document.getElementById('date-next').addEventListener('click',()=>{
+  const i=AVAILABLE_DATES.indexOf(currentDate);if(i<AVAILABLE_DATES.length-1)selectDate(AVAILABLE_DATES[i+1]);
+});
+
+// ─── LOAD DATA ────────────────────────────────────────
+async function loadDateData(){
+  const isToday=currentDate===todayStr();
+  console.log('loadDateData:', currentDate, 'isToday:', isToday);
+  
+  // Try loading from the exact date file first, fall back to nearby files
+  let gamesData = await loadJSON('all_games_'+currentDate+'.json');
+  let picksData = await loadJSON('picks_'+currentDate+'.json');
+  let edgesData = isToday ? await loadJSON('latest_edges.json') : null;
+  
+  // If no file for this date, check if a nearby file contains games for this date
+  if(!gamesData){
+    // Try the previous day's file (it might contain tomorrow's games)
+    const prev = new Date(currentDate+'T12:00:00');
+    prev.setDate(prev.getDate()-1);
+    const prevStr = prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0')+'-'+String(prev.getDate()).padStart(2,'0');
+    const prevData = await loadJSON('all_games_'+prevStr+'.json');
+    if(prevData?.games){
+      const filtered = prevData.games.filter(g=>g.game_date===currentDate);
+      if(filtered.length){
+        gamesData = {...prevData, games: filtered};
+        console.log('Found', filtered.length, 'games for', currentDate, 'in', prevStr, 'file');
+      }
+    }
+  }
+  
+  console.log('Data loaded - edges:', edgesData?.edges?.length, 'games:', gamesData?.games?.length, 'picks:', picksData?.picks?.length);
+  renderEdges(edgesData,picksData,gamesData);
+  // Check if this file has games for other dates (e.g. tomorrow's lines in today's file)
+  addExtraDates(gamesData);
+  renderAllGames(gamesData);
+  renderHistory(picksData);
+  renderCumulative();
+  updateStats(edgesData,gamesData,picksData);
+  const ts=gamesData?.last_updated||gamesData?.timestamp||picksData?.timestamp;
+  if(ts){const d=new Date(ts);document.getElementById('meta-timestamp').textContent='Updated '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true})}
+}
+
+// ─── STATS ────────────────────────────────────────────
+function updateStats(edgesData,gamesData,picksData){
+  if(historyData?.cumulative){
+    const c=historyData.cumulative;
+    document.getElementById('stat-record').textContent=c.correct+'-'+c.wrong;
+    const wr=c.win_rate;
+    document.getElementById('stat-winrate').textContent=wr.toFixed(1)+'%';
+    document.getElementById('stat-winrate').className='stat-value'+(wr>=55?'':wr>=50?' neutral':' red');
+  }
+  const ec=edgesData?.edges?.length||picksData?.picks?.filter(p=>p.has_edge)?.length||0;
+  document.getElementById('stat-edges').textContent=ec;
+  document.getElementById('cnt-edges').textContent=ec;
+  // Games count — filter by current date
+  const allGames = gamesData?.games || [];
+  const dateGames = allGames.filter(g=>!g.game_date||g.game_date===currentDate);
+  document.getElementById('stat-games').textContent=dateGames.length;
+  document.getElementById('cnt-games').textContent=dateGames.length;
+  if(historyData?.daily_results){
+    let sw=0,sl=0;
+    Object.values(historyData.daily_results).forEach(day=>{
+      (day.picks||[]).forEach(p=>{
+        if(p.has_edge&&p.bt_divergence!=null&&p.bt_divergence<=10){
+          if(p.pick_correct===true)sw++;else if(p.pick_correct===false)sl++;
+        }
+      });
+    });
+    document.getElementById('stat-sweet').textContent=(sw+sl>0)?sw+'-'+sl+' ('+(sw/(sw+sl)*100).toFixed(0)+'%)':'—';
+  }
+}
+
+// ─── EDGES ────────────────────────────────────────────
+function renderEdges(edgesData,picksData,gamesData){
+  const container=document.getElementById('edges-container');
+  let edges=[];
+  console.log('renderEdges - edgesData:', !!edgesData, 'currentDate:', currentDate, 'todayStr:', todayStr(), 'match:', currentDate===todayStr());
+  if(edgesData?.edges&&currentDate===todayStr()){
+    edges=edgesData.edges;
+    console.log('Using latest_edges.json:', edges.length, 'edges');
+  }
+  else if(picksData?.picks){
+    edges=picksData.picks.filter(p=>p.has_edge);
+    console.log('Using picks file, has_edge filter:', edges.length, 'of', picksData.picks.length);
+  }
+  else if(gamesData?.games){edges=gamesData.games.filter(g=>g.has_edge).map(g=>({
+    game:g.game,start:g.start,side:g.side,edge:g.edge,confidence:g.confidence,
+    best_ml:g.side===g.home?g.home_ml:g.away_ml,best_book:g.side===g.home?g.home_ml_book:g.away_ml_book,
+    model_prob:g.side===g.home?g.model_home_prob:g.model_away_prob,
+    sportsbook_prob:g.side===g.home?g.books_home_prob:g.books_away_prob,
+    barttorvik_prob:g.side===g.home?g.bt_home_prob:g.bt_away_prob,
+    polymarket_prob:g.side===g.home?g.pm_home_prob:g.pm_away_prob,
+    bt_divergence:g.side===g.home?g.bt_divergence_home:g.bt_divergence_away,
+    kelly_pct:g.kelly_pct,star_note:null,is_live:g.is_live,pick_correct:g.pick_correct
+  }))}
+  if(!edges.length){container.innerHTML='<div class="empty-state">No edge picks for '+fmtDate(currentDate)+'</div>';return}
+  const main=edges.filter(e=>!e.caution&&(e.bt_divergence==null||e.bt_divergence<20));
+  const caution=edges.filter(e=>e.caution||(e.bt_divergence!=null&&e.bt_divergence>=20));
+  let html='<div class="edge-grid">';
+  function card(e){
+    const parts=(e.game||'').split(' @ ');
+    const away=shortTeam(parts[0]||'');const home=shortTeam(parts[1]||'');
+    const pick=shortTeam(e.side||e.pick||'');const odds=fmtOdds(e.best_ml);
+    const conf=e.confidence||'LOW';
+    const hasBT=(e.barttorvik_prob||e.bt_prob||0)>0;const hasPM=(e.polymarket_prob||e.pm_prob||0)>0;const hasStar=!!e.star_note;
+    const sigs=[true,hasBT,hasPM,hasStar];const sc=sigs.filter(Boolean).length;
+    const isCaution=e.caution||(e.bt_divergence!=null&&e.bt_divergence>=20);
+    const btDiv=e.bt_divergence!=null?e.bt_divergence.toFixed(1):'—';
+    let res='';
+    if(e.pick_correct===true||e.result==='W')res='<div class="edge-result W">✓ WIN</div>';
+    else if(e.pick_correct===false||e.result==='L')res='<div class="edge-result L">✗ LOSS</div>';
+    else if(e.is_live)res='<div class="edge-result P">● LIVE</div>';
+    else res='<div class="edge-result P">PENDING</div>';
+    return`<div class="edge-card${isCaution?' caution':''}">
+      <div class="edge-card-header"><div class="edge-matchup">${away}<br><span class="vs">@</span> ${home}</div><div class="edge-conf ${confClass(conf)}">${conf}</div></div>
+      <div class="edge-row"><span class="edge-label">Pick</span><span class="edge-val">${pick} ML ${odds}</span></div>
+      <div class="edge-row"><span class="edge-label">Edge</span><span class="edge-val green">+${(e.edge||0).toFixed(1)}%</span></div>
+      <div class="edge-row"><span class="edge-label">Book</span><span class="edge-val">${e.best_book||'—'}</span></div>
+      <div class="edge-row"><span class="edge-label">Kelly</span><span class="edge-val">${e.kelly_pct?e.kelly_pct.toFixed(1)+'%':'—'}</span></div>
+      <hr class="edge-divider">
+      <div class="edge-row"><span class="edge-label">BT Div</span><span class="edge-val ${parseFloat(btDiv)>=20?'amber':''}">${btDiv}</span></div>
+      <div class="edge-row"><span class="edge-label">Model</span><span class="edge-val">${fmtPct(e.model_prob)}</span></div>
+      <div class="edge-row"><span class="edge-label">Books</span><span class="edge-val">${fmtPct(e.sportsbook_prob||e.books_prob)}</span></div>
+      <div class="edge-signals">${sigs.map(s=>`<div class="edge-signal${s?'':' off'}"></div>`).join('')}<span class="edge-signal-label">${sc}/4 signals</span></div>
+      ${e.star_note?`<div class="edge-star">${e.star_note}</div>`:''}
+      ${res}
+    </div>`}
+  main.forEach(e=>{try{html+=card(e)}catch(err){console.error('Card render error:',err,e)}});
+  html+='</div>';
+  if(caution.length){
+    html+='<div class="caution-divider">Caution Zone — BT Divergence 20+</div><div class="edge-grid">';
+    caution.forEach(e=>{try{html+=card(e)}catch(err){console.error('Caution card error:',err,e)}});html+='</div>';
+  }
+  console.log('Final HTML length:', html.length, 'main:', main.length, 'caution:', caution.length);
+  container.innerHTML=html;
+}
+
+// ─── ALL GAMES ────────────────────────────────────────
+function renderAllGames(gamesData){
+  const container=document.getElementById('games-container');
+  const allGames=gamesData?.games;
+  if(!allGames||!allGames.length){container.innerHTML='<div class="empty-state">No game data for '+fmtDate(currentDate)+'</div>';return}
+  // Filter to only games matching the selected date
+  const dateFiltered=allGames.filter(g=>!g.game_date||g.game_date===currentDate);
+  // Deduplicate games (same matchup can appear with short + full team names)
+  const seen=new Set();
+  function normalizeTeam(s){
+    let t=s.replace(/\s+(Ramblers|Spiders|Longhorns|Rebels|Hoosiers|Wildcats|Cowboys|Golden Eagles|Musketeers|Bears|Hornets|Lumberjacks|Tigers|Green Wave|Cardinals|Mustangs|Huskies|Trojans|Panthers|Bulldogs|Hawks|Bobcats|Terriers|Owls|Bruins|Mountaineers|Billikens|Monarchs|Blue Hens|Aggies|Cougars|Razorbacks|Crimson Tide|Yellow Jackets|Demon Deacons|Blue Devils|Wolfpack|Tar Heels|Cavaliers|Hokies|Seminoles|Hurricanes|Orange|Fighting Irish|Spartans|Wolverines|Hawkeyes|Cornhuskers|Boilermakers|Buckeyes|Badgers|Golden Gophers|Illini|Nittany Lions|Terrapins|Scarlet Knights|Jayhawks|Cyclones|Sooners|Red Raiders|Horned Frogs|Bearcats|Bison|Thundering Herd|Flyers|Peacocks|Gaels|Phoenix|Redbirds|Shockers|Hilltoppers|Bonnies|Explorers|Dukes|Colonials|Stags|Friars|Hoyas|Johnnies|Red Storm|Mavericks|Mean Green|Roadrunners|Miners|Islanders|Jaguars|Gamecocks|Volunteers|Commodores|Gators|Dawgs|Chanticleers|Paladins|Keydets|Rams|Retrievers|Seawolves|Tribe|Pride|Flames|Rattlers|Golden Lions|Blue Demons|Rockets|Zips|Broncos|Flashes|Blue Raiders|RedHawks|Minutemen|Revolutionaries|Patriots|Bluejays|Pirates|Falcons|Sun Devils|Grizzlies|Vikings|Titans|Saints|Warriors|Privateers|Antelopes|Rainbow Warriors|Seahawks|Lakers|Sharks|Buccaneers|Colonels|Dons|Beavers|Tommies|Royals|Governors|Skyhawks|Fighting|Camels|Big Green|Big Red|Black|Highlanders|49ers|Golden Hurricane|Matadors|Wolf Pack|Vaqueros|Lancers|Trailblazers|River Hawks|Pilots|Penguins|Great Danes|Catamounts|Bengals|Leopards|Mountain Hawks|Knights|Tritons|Bearkats|Midshipmen|Blazers|Anteaters|Texans|Dragons)$/i,'').trim();
+    t=t.toLowerCase().replace(/[^a-z ]/g,'').trim();
+    t=t.replace(/\bst\b/g,'state');
+    t=t.replace(/\bwv\b/,'westvirginia');
+    t=t.replace(/\bumass\b/,'massachusetts');
+    t=t.replace(/\buconn\b/,'connecticut');
+    t=t.replace(/\bucf\b/,'centralflorida');
+    t=t.replace(/\bsmu\b/,'southernmethodist');
+    t=t.replace(/\bole miss\b/,'mississippi');
+    t=t.replace(/\blsu\b/,'louisianastate');
+    t=t.replace(/\bvcu\b/,'virginiacommonwealth');
+    return t.replace(/ /g,'');
+  }
+  const games=dateFiltered.filter(g=>{
+    const a=normalizeTeam(g.away||'');
+    const h=normalizeTeam(g.home||'');
+    const key=[a,h].sort().join('|');
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
+  if(!games.length){container.innerHTML='<div class="empty-state">No games for '+fmtDate(currentDate)+' ('+allGames.length+' games in file for other dates)</div>';return}
+  
+  const sorted=[...games].sort((a,b)=>{
+    if(a.has_edge&&!b.has_edge)return-1;if(!a.has_edge&&b.has_edge)return 1;
+    return(a.start_time||'').localeCompare(b.start_time||'');
+  });
+  
+  // Desktop table (8 essential columns — no horizontal scroll)
+  let html=`<div class="table-wrap"><div class="table-scroll"><table style="table-layout:fixed">
+    <thead><tr><th style="width:30%">Game</th><th style="width:8%">Edge</th><th style="width:14%">Pick</th><th style="width:8%">Conf</th><th style="width:10%">ML (A/H)</th><th style="width:8%">Model</th><th style="width:10%">Score</th><th style="width:6%">✓</th></tr></thead><tbody>`;
+  sorted.forEach(g=>{
+    const away=shortTeam(g.away||'');const home=shortTeam(g.home||'');
+    const ba=g.away_ml!=null?fmtOdds(g.away_ml):(g.books_away_prob?probToML(g.books_away_prob):'—');const bh=g.home_ml!=null?fmtOdds(g.home_ml):(g.books_home_prob?probToML(g.books_home_prob):'—');
+    const ma=g.model_away_prob?g.model_away_prob.toFixed(0):'—';const mh=g.model_home_prob?g.model_home_prob.toFixed(0):'—';
+    const ev=g.edge?`<span class="win">+${g.edge.toFixed(1)}%</span>`:'—';
+    const pk=g.side?shortTeam(g.side):'—';
+    const conf=g.confidence?`<span class="edge-conf ${confClass(g.confidence)}" style="font-size:9px;padding:2px 5px">${g.confidence}</span>`:'—';
+    let score='—';
+    if(g.home_score!=null&&g.away_score!=null)score=g.away_score+'-'+g.home_score;
+    else if(g.is_live)score='<span style="color:var(--green)">● LIVE</span>';
+    let res='';if(g.pick_correct===true)res='<span class="win">✓</span>';else if(g.pick_correct===false)res='<span class="loss">✗</span>';
+    html+=`<tr${g.has_edge?' style="background:#0a0e15"':''}>
+      <td style="overflow:hidden;text-overflow:ellipsis">${away} <span style="color:var(--text-muted)">@</span> ${home}</td>
+      <td>${ev}</td><td style="font-weight:600;overflow:hidden;text-overflow:ellipsis">${pk}</td><td>${conf}</td>
+      <td style="font-size:11px;white-space:nowrap">${ba}/${bh}</td><td>${ma}/${mh}</td><td>${score}</td><td>${res}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div></div>';
+  
+  // Mobile cards
+  html+='<div class="game-cards">';
+  sorted.forEach(g=>{
+    const away=shortTeam(g.away||'');const home=shortTeam(g.home||'');
+    const pk=g.side?shortTeam(g.side):'';
+    const ev=g.edge?('+'+g.edge.toFixed(1)+'%'):'';
+    const conf=g.confidence||'';
+    const time=(g.start||'').replace(/ ET.*$/,'').replace('·','').trim();
+    let score='';
+    if(g.home_score!=null&&g.away_score!=null)score=g.away_score+'-'+g.home_score;
+    else if(g.is_live)score='● LIVE';
+    let resClass='P',resText='';
+    if(g.pick_correct===true){resClass='W';resText='✓'}
+    else if(g.pick_correct===false){resClass='L';resText='✗'}
+    
+    html+=`<div class="gc${g.has_edge?' edge':''}">
+      <div class="gc-top">
+        <div class="gc-game">${away} <span class="vs">@</span> ${home}</div>
+        ${score?`<div class="gc-score${resClass==='W'?' win':resClass==='L'?' loss':''}">${score} ${resText}</div>`:`<div class="gc-time">${time}</div>`}
+      </div>
+      ${g.has_edge?`<div class="gc-pick">
+        <span>${pk} ${g.side?(g.side===g.home?fmtOdds(g.home_ml):fmtOdds(g.away_ml)):''}</span>
+        <span class="gc-edge">${ev}</span>
+        ${conf?`<span class="edge-conf ${confClass(conf)}" style="font-size:8px;padding:1px 5px">${conf}</span>`:''}
+      </div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  
+  container.innerHTML=html;
+}
+
+// ─── DAILY PICKS ──────────────────────────────────────
+function renderHistory(picksData){
+  const container=document.getElementById('history-container');
+  const picks=picksData?.picks;
+  if(!picks||!picks.length){container.innerHTML='<div class="empty-state">No picks data for '+fmtDate(currentDate)+'</div>';return}
+  const ep=picks.filter(p=>p.has_edge);
+  let html=`<div style="margin-bottom:14px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim)">${ep.length} edge picks of ${picks.length} total · ${fmtDate(currentDate)}</div>`;
+  html+=`<div class="table-wrap"><div class="table-scroll"><table>
+    <thead><tr><th>Game</th><th>Pick</th><th>ML</th><th>Book</th><th>Edge</th><th>Conf</th><th>BT Div</th><th>Kelly</th><th>Result</th></tr></thead><tbody>`;
+  const sorted=[...ep].sort((a,b)=>(b.edge||0)-(a.edge||0));
+  sorted.forEach(p=>{
+    const res=p.pick_correct===true?'<span class="win">WIN</span>':p.pick_correct===false?'<span class="loss">LOSS</span>':p.result==='W'?'<span class="win">WIN</span>':p.result==='L'?'<span class="loss">LOSS</span>':'<span class="pending">PENDING</span>';
+    const conf=p.confidence?`<span class="edge-conf ${confClass(p.confidence)}" style="font-size:9px;padding:2px 5px">${p.confidence}</span>`:'—';
+    const dvs=p.bt_divergence!=null?p.bt_divergence.toFixed(1):'—';
+    const dvc=(p.bt_divergence||0)>=20?' style="color:var(--amber)"':'';
+    html+=`<tr><td>${shortTeam(p.game||'')}</td><td style="font-weight:600">${shortTeam(p.pick||p.side||'')}</td>
+      <td>${fmtOdds(p.best_ml)}</td><td>${p.best_book||'—'}</td><td class="win">+${(p.edge||0).toFixed(1)}%</td>
+      <td>${conf}</td><td${dvc}>${dvs}</td><td>${p.kelly_pct?p.kelly_pct.toFixed(1)+'%':'—'}</td><td>${res}</td></tr>`;
+  });
+  html+='</tbody></table></div></div>';
+  container.innerHTML=html;
+}
+
+// ─── CUMULATIVE ───────────────────────────────────────
+function renderCumulative(){
+  const container=document.getElementById('cumulative-container');
+  if(!historyData?.daily_results){container.innerHTML='<div class="empty-state">No cumulative data</div>';return}
+  const dr=historyData.daily_results;const dates=Object.keys(dr).sort().reverse();
+  let tiers={'0-10':{w:0,l:0},'10-15':{w:0,l:0},'15-20':{w:0,l:0},'20+':{w:0,l:0}};
+  let confTiers={'HIGH':{w:0,l:0},'MEDIUM':{w:0,l:0},'LOW':{w:0,l:0}};
+  let totalW=0,totalL=0;
+  dates.forEach(date=>{(dr[date].picks||[]).forEach(p=>{
+    if(!p.has_edge)return;
+    if(p.pick_correct===true)totalW++;else if(p.pick_correct===false)totalL++;
+    const dv=p.bt_divergence||0;let tier;
+    if(dv<=10)tier='0-10';else if(dv<=15)tier='10-15';else if(dv<=20)tier='15-20';else tier='20+';
+    if(p.pick_correct===true)tiers[tier].w++;else if(p.pick_correct===false)tiers[tier].l++;
+    const c=p.confidence||'LOW';
+    const cKey=c==='MED'?'MEDIUM':c;
+    if(confTiers[cKey]){
+      if(p.pick_correct===true)confTiers[cKey].w++;else if(p.pick_correct===false)confTiers[cKey].l++;
+    }
+  })});
+  let html=`<div style="margin-bottom:24px">
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Performance by BT Divergence Tier</div>
+    <div class="stats-strip" style="grid-template-columns:repeat(4,1fr)">`;
+  Object.entries(tiers).forEach(([tier,{w,l}])=>{
+    const t=w+l;const rate=t>0?(w/t*100).toFixed(0)+'%':'—';
+    const cl=t===0?'neutral':(w/t>=.6?'':(w/t>=.5?'neutral':'red'));
+    html+=`<div class="stat-cell"><div class="stat-value ${cl}">${t>0?w+'-'+l:'—'}</div><div class="stat-label">BT Div ${tier} · ${rate}</div></div>`;
+  });
+  html+='</div></div>';
+  
+  // Confidence tier breakdown
+  html+=`<div style="margin-bottom:24px">
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Performance by Confidence</div>
+    <div class="stats-strip" style="grid-template-columns:repeat(3,1fr)">`;
+  [['HIGH','green'],['MEDIUM','amber'],['LOW','blue']].forEach(([tier,color])=>{
+    const{w,l}=confTiers[tier];const t=w+l;const rate=t>0?(w/t*100).toFixed(0)+'%':'—';
+    const cl=t===0?'neutral':(w/t>=.6?'':(w/t>=.5?'neutral':'red'));
+    html+=`<div class="stat-cell"><div class="stat-value ${cl}">${t>0?w+'-'+l:'—'}</div><div class="stat-label">${tier==='MEDIUM'?'MED':tier} · ${rate}</div></div>`;
+  });
+  html+='</div></div>';
+  
+  html+=`<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Daily Results</div>`;
+  html+=`<div class="table-wrap"><div class="table-scroll"><table>
+    <thead><tr><th>Date</th><th>Record</th><th>Edge Picks</th><th>Total</th></tr></thead><tbody>`;
+  dates.forEach(date=>{
+    const d=dr[date];const picks=d.picks||[];const ep=picks.filter(p=>p.has_edge).length;
+    html+=`<tr style="cursor:pointer" onclick="selectDate('${date}')"><td>${fmtDate(date)}</td><td>${d.record||'—'}</td><td>${ep}</td><td>${d.total_picks||picks.length}</td></tr>`;
+  });
+  html+='</tbody></table></div></div>';
+  if(totalW+totalL>0)html+=`<div style="text-align:center;margin-top:18px;font-family:var(--font-mono);font-size:12px;color:var(--text-dim)">Cumulative Edge Picks: <span class="win">${totalW}-${totalL}</span> (${(totalW/(totalW+totalL)*100).toFixed(1)}%)</div>`;
+  html+=`<div style="text-align:center;margin-top:12px"><a href="record.html" style="font-family:var(--font-mono);font-size:11px;color:var(--green);text-decoration:none;letter-spacing:1px">FULL FILTERABLE RECORD →</a></div>`;
+  container.innerHTML=html;
+}
+
+// ─── TABS ─────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('visible');
+  });
+});
+
+// ─── INIT ─────────────────────────────────────────────
+async function init(){
+  console.log('Edge Finder init, today:', todayStr());
+  historyData=await loadJSON('pick_history.json');
+  console.log('History loaded:', historyData ? 'yes' : 'no', historyData?.daily_results ? Object.keys(historyData.daily_results).length + ' dates' : '');
+  discoverDatesFromHistory();
+  await loadDateData();
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edge Finder — Track Record</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08090c;--bg-card:#0e1017;--bg-card-hover:#141722;--bg-elevated:#111420;
+  --border:#1a1e2a;--border-bright:#2a3045;
+  --text:#e8eaf0;--text-dim:#6b7394;--text-muted:#3d4460;
+  --green:#00e87b;--green-dim:#00e87b22;--green-glow:#00e87b15;
+  --red:#ff3b5c;--red-dim:#ff3b5c22;
+  --amber:#ffb224;--amber-dim:#ffb22422;
+  --blue:#3b82f6;--blue-dim:#3b82f622;
+  --cyan:#06b6d4;--cyan-dim:#06b6d422;
+  --purple:#a855f7;--purple-dim:#a855f722;
+  --font-display:'Outfit',sans-serif;--font-mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.06;pointer-events:none;z-index:0}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;background:#08090cee;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:26px;height:26px;background:var(--green);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.nav-logo-text{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text);letter-spacing:2px;text-transform:uppercase}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s;padding:4px 0}
+.nav-links a:hover{color:var(--text)}
+.nav-links a.active{color:var(--green);border-bottom:2px solid var(--green)}
+
+.page{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:80px 28px 60px}
+
+/* HEADER */
+.page-header{margin-bottom:28px}
+.page-badge{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:12px;font-weight:500;background:var(--green-dim);color:var(--green);border:1px solid #00e87b33}
+.page-title{font-size:clamp(28px,3.5vw,42px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:6px}
+.page-title .accent{color:var(--green)}
+.page-sub{font-size:14px;color:var(--text-dim);max-width:600px;line-height:1.6}
+
+/* MODEL TABS */
+.model-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--border)}
+.model-tab{font-family:var(--font-mono);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);background:none;border:none;padding:14px 24px;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;gap:8px}
+.model-tab:hover{color:var(--text)}
+.model-tab.active{color:var(--green)}
+.model-tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--green)}
+.model-tab .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.model-tab .dot-live{background:var(--green);animation:pulse 2s infinite}
+.model-tab .dot-soon{background:var(--amber)}
+.model-tab.disabled{opacity:.4;cursor:default}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:14px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-label{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap}
+.filter-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.5px;background:var(--bg);color:var(--text-dim);border:1px solid var(--border);padding:5px 10px;border-radius:4px;cursor:pointer;transition:all .15s}
+.filter-btn:hover{border-color:var(--border-bright);color:var(--text)}
+.filter-btn.active{background:var(--green-dim);color:var(--green);border-color:#00e87b44}
+.filter-btn.active-amber{background:var(--amber-dim);color:var(--amber);border-color:#ffb22444}
+.filter-btn.active-blue{background:var(--blue-dim);color:var(--blue);border-color:#3b82f644}
+.filter-sep{width:1px;height:24px;background:var(--border);flex-shrink:0}
+.filter-toggle{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);background:var(--bg);border:1px solid var(--border);padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.filter-toggle:hover{border-color:var(--border-bright)}
+.filter-toggle.on{background:var(--green-dim);color:var(--green);border-color:#00e87b44}
+.filter-toggle .check{width:12px;height:12px;border:1px solid var(--border-bright);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px}
+.filter-toggle.on .check{background:var(--green);border-color:var(--green);color:#08090c}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;margin-bottom:24px}
+.sr-cell{background:var(--bg-card);padding:16px 12px;text-align:center}
+.sr-cell:hover{background:var(--bg-card-hover)}
+.sr-val{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--green);margin-bottom:2px}
+.sr-val.neutral{color:var(--text)}
+.sr-val.red{color:var(--red)}
+.sr-lbl{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px}
+
+/* TABLE — compact, fits desktop without scroll */
+.table-wrap{background:var(--bg-card);border-radius:8px;border:1px solid var(--border);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px;table-layout:fixed}
+thead th{text-align:left;padding:9px 8px;color:var(--text-muted);font-weight:400;letter-spacing:.8px;text-transform:uppercase;font-size:9px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--bg-card);z-index:2;cursor:pointer;user-select:none;transition:color .15s;overflow:hidden}
+thead th:hover{color:var(--text)}
+thead th.sorted{color:var(--green)}
+thead th .arrow{font-size:8px;margin-left:2px}
+tbody td{padding:8px 8px;border-bottom:1px solid #0d0f16;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tbody tr{transition:background .15s}
+tbody tr:hover td{background:var(--bg-card-hover);color:var(--text)}
+tbody tr.edge-row{background:#0a0e15}
+.col-game{width:28%}.col-pick{width:14%}.col-date{width:6%}
+
+/* MOBILE CARDS */
+.record-cards{display:none}
+.rc{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;transition:background .2s}
+.rc:hover{background:var(--bg-card-hover)}
+.rc.edge{border-left:3px solid var(--green)}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.rc-game{font-size:13px;font-weight:600;line-height:1.3;flex:1;margin-right:8px}
+.rc-game .vs{color:var(--text-muted);font-weight:400;font-size:10px}
+.rc-result{font-family:var(--font-mono);font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.rc-result.W{background:var(--green-dim);color:var(--green)}
+.rc-result.L{background:var(--red-dim);color:var(--red)}
+.rc-result.P{background:#1a1e2a;color:var(--text-muted)}
+.rc-row{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;padding:2px 0}
+.rc-lbl{color:var(--text-muted)}
+.rc-v{color:var(--text)}
+.rc-v.green{color:var(--green)}
+.rc-v.amber{color:var(--amber)}
+.rc-date{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-bottom:4px}
+.win{color:var(--green);font-weight:500}
+.loss{color:var(--red);font-weight:500}
+.pending{color:var(--text-muted)}
+.conf-badge{font-family:var(--font-mono);font-size:9px;padding:2px 6px;border-radius:3px;font-weight:500}
+.conf-HIGH{background:var(--green-dim);color:var(--green)}
+.conf-MEDIUM,.conf-MED{background:var(--amber-dim);color:var(--amber)}
+.conf-LOW{background:var(--blue-dim);color:var(--blue)}
+
+.table-footer{padding:12px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text-muted);text-align:center;border-top:1px solid var(--border);letter-spacing:.5px}
+
+/* COMING SOON OVERLAY */
+.coming-overlay{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center}
+.coming-overlay .icon{font-size:48px;margin-bottom:16px;opacity:.6}
+.coming-overlay .title{font-size:24px;font-weight:700;margin-bottom:8px}
+.coming-overlay .sub{font-size:14px;color:var(--text-dim);max-width:400px;line-height:1.6}
+.coming-overlay .date{font-family:var(--font-mono);font-size:12px;color:var(--amber);margin-top:16px;letter-spacing:1px}
+
+.loading{text-align:center;padding:40px;font-family:var(--font-mono);font-size:12px;color:var(--text-muted)}
+.loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--border-bright);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:900px){
+  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .filter-bar{flex-direction:column;align-items:stretch;padding:12px 14px;gap:10px}
+  .filter-group{flex-wrap:wrap}
+  .filter-sep{display:none}
+  nav{padding:12px 16px}
+  .page{padding:72px 12px 40px}
+  .nav-links a:not(.active){display:none}
+  .page-title{font-size:28px}
+  .model-tab{padding:12px 14px;font-size:10px;letter-spacing:1px}
+  /* Switch from table to cards on tablet/mobile */
+  .table-wrap{display:none}
+  .record-cards{display:block}
+}
+@media(max-width:600px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .sr-cell{padding:12px 8px}
+  .sr-val{font-size:18px}
+  .sr-lbl{font-size:8px;letter-spacing:1px}
+  .page-title{font-size:22px}
+  .page-sub{font-size:12px}
+  .page-badge{font-size:9px}
+  .model-tab{padding:10px 10px;font-size:9px;letter-spacing:.5px;gap:5px}
+  .model-tab .dot{width:5px;height:5px}
+  .filter-btn{padding:4px 8px;font-size:9px}
+  .filter-label{font-size:8px}
+  nav .nav-logo-text{font-size:11px;letter-spacing:1px}
+  nav .nav-logo-icon{width:22px;height:22px}
+  .coming-overlay .title{font-size:20px}
+  .coming-overlay .icon{font-size:36px}
+  .rc{padding:12px}
+  .rc-game{font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav>
+  <a href="index.html" class="nav-logo"><div class="nav-logo-icon"></div><span class="nav-logo-text">Edge Finder</span></a>
+  <div class="nav-links">
+    <a href="ncaab.html">NCAAB</a>
+    <a href="mlb.html">MLB</a>
+    <a href="stonks.html">Stonks</a>
+    <a href="record.html" class="active">Record</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="page-badge">Full Transparency</div>
+    <div class="page-title">Every pick. Every <span class="accent">result.</span></div>
+    <div class="page-sub">No deleted picks, no hidden losses. Every edge the model finds is published with a timestamp and tracked to completion. Filter, sort, and verify.</div>
+  </div>
+
+  <!-- MODEL TABS -->
+  <div class="model-tabs">
+    <button class="model-tab active" data-model="ncaab"><span class="dot dot-live"></span>NCAAB</button>
+    <button class="model-tab disabled" data-model="mlb"><span class="dot dot-soon"></span>MLB · Mar 26</button>
+    <button class="model-tab disabled" data-model="stonks"><span class="dot dot-soon"></span>Stonks · Soon</button>
+  </div>
+
+  <!-- NCAAB CONTENT -->
+  <div id="ncaab-content">
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Show:</span>
+        <button class="filter-btn active" data-filter="show" data-val="all">All Games</button>
+        <button class="filter-btn" data-filter="show" data-val="edge">Edge Picks Only</button>
+        <button class="filter-btn" data-filter="show" data-val="scored">Scored Only</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <span class="filter-label">Conf:</span>
+        <button class="filter-btn active" data-filter="conf" data-val="all">All</button>
+        <button class="filter-btn" data-filter="conf" data-val="HIGH">High</button>
+        <button class="filter-btn" data-filter="conf" data-val="MEDIUM">Med</button>
+        <button class="filter-btn" data-filter="conf" data-val="LOW">Low</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <span class="filter-label">BT Div:</span>
+        <button class="filter-btn active" data-filter="bt" data-val="all">All</button>
+        <button class="filter-btn" data-filter="bt" data-val="0-10">0-10</button>
+        <button class="filter-btn" data-filter="bt" data-val="10-20">10-20</button>
+        <button class="filter-btn" data-filter="bt" data-val="20+">20+</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <span class="filter-label">Date:</span>
+        <button class="filter-btn active" data-filter="date" data-val="all">All</button>
+        <div id="date-filter-btns"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="sr-cell"><div class="sr-val" id="sr-record">—</div><div class="sr-lbl">Record</div></div>
+      <div class="sr-cell"><div class="sr-val" id="sr-winrate">—</div><div class="sr-lbl">Win Rate</div></div>
+      <div class="sr-cell"><div class="sr-val neutral" id="sr-total">—</div><div class="sr-lbl">Total Picks</div></div>
+      <div class="sr-cell"><div class="sr-val neutral" id="sr-pending">—</div><div class="sr-lbl">Pending</div></div>
+      <div class="sr-cell"><div class="sr-val" id="sr-edge">—</div><div class="sr-lbl">Avg Edge</div></div>
+      <div class="sr-cell"><div class="sr-val" id="sr-sweet">—</div><div class="sr-lbl">Sweet Spot 0-10</div></div>
+    </div>
+
+    <!-- TABLE -->
+    <!-- TABLE (desktop) / CARDS (mobile) -->
+    <div id="record-view">
+      <div class="loading">Loading all games</div>
+    </div>
+    <div class="table-footer" id="record-footer">Loading…</div>
+  </div>
+
+  <!-- MLB COMING SOON -->
+  <div id="mlb-content" style="display:none">
+    <div class="coming-overlay">
+      <div class="icon">⚾</div>
+      <div class="title">MLB Edge Finder</div>
+      <div class="sub">Eight signals deep. SP matchups, bullpen quality, park factors, platoon splits, BABIP regression, sprint speed — launching Opening Day.</div>
+      <div class="date">Launching March 26, 2026</div>
+    </div>
+  </div>
+
+  <!-- STONKS COMING SOON -->
+  <div id="stonks-content" style="display:none">
+    <div class="coming-overlay">
+      <div class="icon">📈</div>
+      <div class="title">Congress Alpha Tracker</div>
+      <div class="sub">SEC Form 4 insider trades and Congressional STOCK Act filings. Full trade explorer with P/L tracking coming soon.</div>
+      <div class="date">Trade explorer in development</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────
+let allRows = [];       // master list of all game/pick rows
+let filteredRows = [];  // after filters applied
+let currentModel = 'ncaab';
+let sortCol = 'date';
+let sortDir = 'desc';
+let filters = { show: 'all', conf: 'all', bt: 'all', date: 'all' };
+let availableDates = [];
+
+// ─── UTILS ────────────────────────────────────────────
+function fmtPct(v,d=1){return v!=null?v.toFixed(d)+'%':'—'}
+function fmtOdds(v){if(v==null)return'—';return v>0?'+'+v:''+v}
+function shortTeam(s){return s.replace(/ (Ramblers|Spiders|Longhorns|Rebels|Hoosiers|Wildcats|Cowboys|Golden Eagles|Musketeers|Bears|Hornets|Lumberjacks|Tigers|Green Wave|Cardinals|Mustangs|Huskies|Trojans|Panthers|Bulldogs|Hawks|Bobcats|Terriers|Owls|Bruins|Mountaineers|Billikens|Monarchs|Blue Hens|Aggies|Cougars|Razorbacks|Crimson Tide|Yellow Jackets|Demon Deacons|Blue Devils|Wolfpack|Tar Heels|Cavaliers|Hokies|Seminoles|Hurricanes|Orange|Fighting Irish|Spartans|Wolverines|Hawkeyes|Cornhuskers|Boilermakers|Buckeyes|Badgers|Golden Gophers|Illini|Nittany Lions|Terrapins|Scarlet Knights|Jayhawks|Cyclones|Sooners|Red Raiders|Horned Frogs|Bearcats|Bison|Thundering Herd|Flyers|Peacocks|Gaels|Phoenix|Redbirds|Shockers|Hilltoppers|Bonnies|Explorers|Dukes|Colonials|Stags|Friars|Hoyas|Johnnies|Red Storm|Mavericks|Mean Green|Roadrunners|Miners|Islanders|Jaguars|Gamecocks|Volunteers|Commodores|Gators|Dawgs|Chanticleers|Paladins|Keydets|Rams|Retrievers|Seawolves|Tribe|Pride|Flames|Rattlers|Golden Lions|Spartans|Blue Demons|Rockets|Zips|Broncos|Flashes|Blue Raiders|RedHawks|Minutemen|Revolutionaries|Patriots|Bluejays|Pirates|Falcons)$/i,'').trim()}
+function fmtDateShort(s){const[y,m,d]=s.split('-');return parseInt(m)+'/'+parseInt(d)}
+function normalizeTeam(s){
+  // Strip ALL mascot suffixes (comprehensive)
+  let t=s.replace(/\s+(Ramblers|Spiders|Longhorns|Rebels|Hoosiers|Wildcats|Cowboys|Golden Eagles|Musketeers|Bears|Hornets|Lumberjacks|Tigers|Green Wave|Cardinals|Mustangs|Huskies|Trojans|Panthers|Bulldogs|Hawks|Bobcats|Terriers|Owls|Bruins|Mountaineers|Billikens|Monarchs|Blue Hens|Aggies|Cougars|Razorbacks|Crimson Tide|Yellow Jackets|Demon Deacons|Blue Devils|Wolfpack|Tar Heels|Cavaliers|Hokies|Seminoles|Hurricanes|Orange|Fighting Irish|Spartans|Wolverines|Hawkeyes|Cornhuskers|Boilermakers|Buckeyes|Badgers|Golden Gophers|Illini|Nittany Lions|Terrapins|Scarlet Knights|Jayhawks|Cyclones|Sooners|Red Raiders|Horned Frogs|Bearcats|Bison|Thundering Herd|Flyers|Peacocks|Gaels|Phoenix|Redbirds|Shockers|Hilltoppers|Bonnies|Explorers|Dukes|Colonials|Stags|Friars|Hoyas|Johnnies|Red Storm|Mavericks|Mean Green|Roadrunners|Miners|Islanders|Jaguars|Gamecocks|Volunteers|Commodores|Gators|Dawgs|Chanticleers|Paladins|Keydets|Rams|Retrievers|Seawolves|Tribe|Pride|Flames|Rattlers|Golden Lions|Blue Demons|Rockets|Zips|Broncos|Flashes|Blue Raiders|RedHawks|Minutemen|Revolutionaries|Patriots|Bluejays|Pirates|Falcons|Sun Devils|Grizzlies|Vikings|Titans|Saints|Warriors|Privateers|Antelopes|Rainbow Warriors|Seahawks|Lakers|Sharks|Buccaneers|Colonels|Dons|Beavers|Tommies|Royals|Governors|Skyhawks|Fighting|Camels|Big Green|Big Red|Black|Highlanders|49ers|Golden Hurricane|Matadors|Wolf Pack|Vaqueros|Lancers|Trailblazers|River Hawks|Pilots|Penguins|Great Danes|Catamounts|Bengals|Leopards|Mountain Hawks|Knights|Tritons|Bearkats|Midshipmen|Blazers|Anteaters|Texans|Dragons)$/i,'').trim();
+  t=t.toLowerCase().replace(/[^a-z ]/g,'').trim();
+  t=t.replace(/\bst\b/g,'state');
+  t=t.replace(/\bwv\b/,'westvirginia');
+  t=t.replace(/\bumass\b/,'massachusetts');
+  t=t.replace(/\buconn\b/,'connecticut');
+  t=t.replace(/\bucf\b/,'centralflorida');
+  t=t.replace(/\bsmu\b/,'southernmethodist');
+  return t.replace(/ /g,'');
+}
+
+async function loadJSON(f){try{const r=await fetch('data/'+f+'?t='+Date.now());if(!r.ok)return null;return await r.json()}catch{return null}}
+
+// ─── LOAD ALL NCAAB DATA ─────────────────────────────
+async function loadAllNCAAB(){
+  const hist = await loadJSON('pick_history.json');
+  
+  // Load all all_games files
+  const gameFiles = [
+    'all_games_2026-03-07.json','all_games_2026-03-08.json','all_games_2026-03-09.json',
+    'all_games_2026-03-10.json','all_games_2026-03-11.json'
+  ];
+  const gameDataArr = await Promise.all(gameFiles.map(f => loadJSON(f)));
+  
+  // Build master row list from all_games (deduplicated across files)
+  // Same game can appear in multiple files (e.g. all_games_2026-03-10 and 2026-03-11)
+  // Keep the version with the most data (score > no score, edge > no edge)
+  const seen = new Map(); // key -> index in allRows
+  allRows = [];
+  
+  function makeKey(awayStr, homeStr, dateStr){
+    // Use game_date in key so same teams on different actual dates aren't merged
+    return [normalizeTeam(awayStr), normalizeTeam(homeStr)].sort().join('|') + '@' + (dateStr||'');
+  }
+  
+  function rowScore(r){
+    // Score how much data this row has (higher = keep this one)
+    let s = 0;
+    if(r.winner) s += 10;
+    if(r.score_away != null) s += 5;
+    if(r.pick_correct != null) s += 5;
+    if(r.has_edge) s += 3;
+    if(r.edge) s += 2;
+    if(r.conf) s += 1;
+    if(r.date) s += 1;
+    return s;
+  }
+  
+  gameDataArr.forEach(gd => {
+    if(!gd?.games) return;
+    gd.games.forEach(g => {
+      const key = makeKey(g.away||'', g.home||'', g.game_date||'');
+      
+      const side = g.side || '';
+      const isSideHome = side && (normalizeTeam(side) === normalizeTeam(g.home||''));
+      
+      // Compute pick_correct from score if available but pick_correct not set
+      let pickCorrect = g.pick_correct;
+      if(pickCorrect == null && g.winner && side){
+        const pickNorm = normalizeTeam(side);
+        const winnerNorm = normalizeTeam(g.winner);
+        pickCorrect = pickNorm === winnerNorm;
+      }
+      
+      const row = {
+        date: g.game_date || '',
+        game: g.game || '',
+        away: g.away || '',
+        home: g.home || '',
+        pick: side,
+        ml: isSideHome ? g.home_ml : (side ? g.away_ml : null),
+        edge: g.edge || null,
+        conf: g.confidence || null,
+        bt: isSideHome ? g.bt_divergence_home : (g.bt_divergence_away || null),
+        model: isSideHome ? g.model_home_prob : (side ? g.model_away_prob : null),
+        books: isSideHome ? g.books_home_prob : (side ? g.books_away_prob : null),
+        bt_prob: isSideHome ? g.bt_home_prob : (side ? g.bt_away_prob : null),
+        pm: isSideHome ? g.pm_home_prob : (side ? g.pm_away_prob : null),
+        book: isSideHome ? g.home_ml_book : (side ? g.away_ml_book : null),
+        has_edge: g.has_edge || false,
+        score_away: g.away_score,
+        score_home: g.home_score,
+        winner: g.winner || null,
+        pick_correct: pickCorrect,
+        is_live: g.is_live || false,
+        kelly: g.kelly_pct || null,
+        start: g.start || '',
+      };
+      
+      if(seen.has(key)){
+        // Keep the version with more data
+        const existingIdx = seen.get(key);
+        if(rowScore(row) > rowScore(allRows[existingIdx])){
+          allRows[existingIdx] = row;
+        }
+      } else {
+        seen.set(key, allRows.length);
+        allRows.push(row);
+      }
+    });
+  });
+  
+  // Enrich existing rows from pick_history (may have more accurate results/confidence)
+  // Also add pick_history picks that don't exist in all_games
+  if(hist?.daily_results){
+    Object.entries(hist.daily_results).forEach(([date, day]) => {
+      (day.picks || []).forEach(p => {
+        if(!p.has_edge) return;
+        
+        // Try to match to existing row
+        const parts = (p.game||'').split(' @ ');
+        const pAway = normalizeTeam(parts[0]||'');
+        const pHome = normalizeTeam(parts[1]||'');
+        
+        const match = allRows.find(r => {
+          if(r.date !== date) return false;
+          const rAway = normalizeTeam(r.away);
+          const rHome = normalizeTeam(r.home);
+          return (rAway === pAway && rHome === pHome) || 
+                 (rAway === pHome && rHome === pAway); // in case away/home swapped
+        });
+        
+        if(match){
+          // Enrich existing row
+          if(p.pick_correct != null) match.pick_correct = p.pick_correct;
+          if(p.confidence && !match.conf) match.conf = p.confidence;
+          if(p.edge && (!match.edge || match.edge === 0)) match.edge = p.edge;
+          if(p.bt_divergence != null && match.bt == null) match.bt = p.bt_divergence;
+          if(p.has_edge) match.has_edge = true;
+        } else {
+          // Add as new row (pick exists in history but not in any all_games file)
+          const pickNorm = normalizeTeam(p.pick||'');
+          const isSideHome = pickNorm === pHome;
+          const dupKey = makeKey(parts[0]||'', parts[1]||'', date);
+          if(seen.has(dupKey)) return; // already added via different name
+          seen.set(dupKey, allRows.length);
+          
+          allRows.push({
+            date: date,
+            game: p.game || '',
+            away: parts[0] || '',
+            home: parts[1] || '',
+            pick: p.pick || '',
+            ml: p.best_ml || null,
+            edge: p.edge || null,
+            conf: p.confidence || null,
+            bt: p.bt_divergence != null ? p.bt_divergence : null,
+            model: p.model_prob || null,
+            books: p.books_prob || null,
+            bt_prob: p.bt_prob || null,
+            pm: p.pm_prob || null,
+            book: p.best_book || null,
+            has_edge: true,
+            score_away: null,
+            score_home: null,
+            winner: p.result || null,
+            pick_correct: p.pick_correct,
+            is_live: false,
+            kelly: null,
+            start: '',
+          });
+        }
+      });
+    });
+  }
+  
+  // Discover dates
+  availableDates = [...new Set(allRows.map(r => r.date).filter(Boolean))].sort();
+  renderDateFilters();
+  
+  console.log('Loaded', allRows.length, 'rows across', availableDates.length, 'dates');
+}
+
+// ─── DATE FILTER BUTTONS ──────────────────────────────
+function renderDateFilters(){
+  const c = document.getElementById('date-filter-btns');
+  c.innerHTML = availableDates.map(d => 
+    `<button class="filter-btn" data-filter="date" data-val="${d}">${fmtDateShort(d)}</button>`
+  ).join('');
+}
+
+// ─── APPLY FILTERS ────────────────────────────────────
+function applyFilters(){
+  filteredRows = allRows.filter(r => {
+    // Show filter
+    if(filters.show === 'edge' && !r.has_edge) return false;
+    if(filters.show === 'scored' && r.pick_correct == null && !r.winner) return false;
+    
+    // Confidence filter — implicitly requires edge pick
+    if(filters.conf !== 'all'){
+      if(!r.has_edge || !r.conf) return false;
+      if(filters.conf === 'MEDIUM' && r.conf !== 'MEDIUM' && r.conf !== 'MED') return false;
+      else if(filters.conf !== 'MEDIUM' && r.conf !== filters.conf) return false;
+    }
+    
+    // BT Divergence filter — implicitly requires edge pick
+    if(filters.bt !== 'all'){
+      if(!r.has_edge) return false;
+      if(r.bt == null) return false;
+      if(filters.bt === '0-10' && r.bt > 10) return false;
+      if(filters.bt === '10-20' && (r.bt <= 10 || r.bt > 20)) return false;
+      if(filters.bt === '20+' && r.bt <= 20) return false;
+    }
+    
+    // Date filter
+    if(filters.date !== 'all' && r.date !== filters.date) return false;
+    
+    return true;
+  });
+  
+  applySort();
+  renderStats();
+  renderTable();
+}
+
+// ─── SORTING ──────────────────────────────────────────
+function applySort(){
+  filteredRows.sort((a, b) => {
+    let va, vb;
+    switch(sortCol){
+      case 'date': va=a.date; vb=b.date; break;
+      case 'game': va=a.game; vb=b.game; break;
+      case 'pick': va=a.pick; vb=b.pick; break;
+      case 'ml': va=a.ml||0; vb=b.ml||0; break;
+      case 'edge': va=a.edge||0; vb=b.edge||0; break;
+      case 'conf': va={HIGH:3,MEDIUM:2,MED:2,LOW:1}[a.conf]||0; vb={HIGH:3,MEDIUM:2,MED:2,LOW:1}[b.conf]||0; break;
+      case 'bt': va=a.bt||999; vb=b.bt||999; break;
+      case 'model': va=a.model||0; vb=b.model||0; break;
+      case 'books': va=a.books||0; vb=b.books||0; break;
+      case 'bt_prob': va=a.bt_prob||0; vb=b.bt_prob||0; break;
+      case 'pm': va=a.pm||0; vb=b.pm||0; break;
+      case 'result': 
+        va = a.pick_correct===true?2:a.pick_correct===false?1:0;
+        vb = b.pick_correct===true?2:b.pick_correct===false?1:0;
+        break;
+      default: va=a.date; vb=b.date;
+    }
+    if(va < vb) return sortDir==='asc' ? -1 : 1;
+    if(va > vb) return sortDir==='asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+// ─── RENDER STATS ─────────────────────────────────────
+function renderStats(){
+  const rows = filteredRows;
+  const w = rows.filter(r => r.pick_correct === true).length;
+  const l = rows.filter(r => r.pick_correct === false).length;
+  const pending = rows.filter(r => r.pick_correct == null && !r.winner && r.has_edge).length;
+  const total = rows.filter(r => r.has_edge).length;
+  const edgeRows = rows.filter(r => r.has_edge && r.edge);
+  const avgEdge = edgeRows.length ? (edgeRows.reduce((s,r) => s + r.edge, 0) / edgeRows.length) : 0;
+  
+  document.getElementById('sr-record').textContent = (w+l) > 0 ? w + '-' + l : '—';
+  const wr = (w+l) > 0 ? (w/(w+l)*100) : 0;
+  document.getElementById('sr-winrate').textContent = (w+l) > 0 ? wr.toFixed(1) + '%' : '—';
+  document.getElementById('sr-winrate').className = 'sr-val' + (wr >= 55 ? '' : wr >= 50 ? ' neutral' : (w+l) > 0 ? ' red' : ' neutral');
+  document.getElementById('sr-total').textContent = total || rows.length;
+  document.getElementById('sr-pending').textContent = pending;
+  document.getElementById('sr-edge').textContent = avgEdge > 0 ? '+' + avgEdge.toFixed(1) + '%' : '—';
+  
+  // Sweet spot
+  const sw = rows.filter(r => r.has_edge && r.bt != null && r.bt <= 10 && r.pick_correct === true).length;
+  const sl = rows.filter(r => r.has_edge && r.bt != null && r.bt <= 10 && r.pick_correct === false).length;
+  document.getElementById('sr-sweet').textContent = (sw+sl) > 0 ? sw+'-'+sl+' ('+(sw/(sw+sl)*100).toFixed(0)+'%)' : '—';
+}
+
+// ─── RENDER TABLE ─────────────────────────────────────
+function renderTable(){
+  const container = document.getElementById('record-view');
+  const footer = document.getElementById('record-footer');
+  
+  if(!filteredRows.length){
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-family:var(--font-mono)">No games match filters</div>';
+    footer.textContent = '0 results';
+    return;
+  }
+  
+  // ─── DESKTOP TABLE (8 columns — fits without horizontal scroll) ───
+  let tableHTML = `<div class="table-wrap"><div style="max-height:70vh;overflow-y:auto"><table>
+    <thead><tr>
+      <th class="col-date" data-sort="date">Date <span class="arrow"></span></th>
+      <th class="col-game" data-sort="game">Game <span class="arrow"></span></th>
+      <th class="col-pick" data-sort="pick">Pick <span class="arrow"></span></th>
+      <th data-sort="edge">Edge <span class="arrow"></span></th>
+      <th data-sort="conf">Conf <span class="arrow"></span></th>
+      <th data-sort="bt">BT <span class="arrow"></span></th>
+      <th>Score</th>
+      <th data-sort="result">Result <span class="arrow"></span></th>
+    </tr></thead><tbody>`;
+  
+  filteredRows.forEach(r => {
+    const dateStr = r.date ? r.date.slice(5).replace('-','/') : '—';
+    const away = shortTeam(r.away);
+    const home = shortTeam(r.home);
+    const pick = r.pick ? shortTeam(r.pick) : '—';
+    const edge = r.edge ? `<span class="win">+${r.edge.toFixed(1)}%</span>` : '—';
+    const conf = r.conf ? `<span class="conf-badge conf-${r.conf.replace('MEDIUM','MED')}">${r.conf.replace('MEDIUM','MED')}</span>` : '—';
+    const bt = r.bt != null ? `<span style="${r.bt >= 20 ? 'color:var(--amber)' : ''}">${r.bt.toFixed(1)}</span>` : '—';
+    let score = '—';
+    if(r.score_away != null && r.score_home != null) score = r.score_away + '-' + r.score_home;
+    else if(r.is_live) score = '<span style="color:var(--green)">● LIVE</span>';
+    let result = '<span class="pending">—</span>';
+    if(r.pick_correct === true) result = '<span class="win">WIN</span>';
+    else if(r.pick_correct === false) result = '<span class="loss">LOSS</span>';
+    
+    tableHTML += `<tr class="${r.has_edge ? 'edge-row' : ''}" title="Pick: ${pick} ${fmtOdds(r.ml)} | Model: ${r.model?r.model.toFixed(0)+'%':'—'} | Books: ${r.books?r.books.toFixed(0)+'%':'—'} | ${r.book||''}">
+      <td>${dateStr}</td>
+      <td style="overflow:hidden;text-overflow:ellipsis">${away} <span style="color:var(--text-muted)">@</span> ${home}</td>
+      <td style="font-weight:${r.has_edge ? '600' : '400'}">${pick}</td>
+      <td>${edge}</td>
+      <td>${conf}</td>
+      <td>${bt}</td>
+      <td>${score}</td>
+      <td>${result}</td>
+    </tr>`;
+  });
+  
+  tableHTML += '</tbody></table></div></div>';
+  
+  // ─── MOBILE CARDS ───
+  let cardsHTML = '<div class="record-cards">';
+  filteredRows.forEach(r => {
+    const dateStr = r.date ? r.date.slice(5).replace('-','/') : '—';
+    const away = shortTeam(r.away);
+    const home = shortTeam(r.home);
+    const pick = r.pick ? shortTeam(r.pick) : '—';
+    let resClass = 'P', resText = '—';
+    if(r.pick_correct === true){ resClass = 'W'; resText = 'WIN'; }
+    else if(r.pick_correct === false){ resClass = 'L'; resText = 'LOSS'; }
+    let score = '';
+    if(r.score_away != null && r.score_home != null) score = r.score_away + '-' + r.score_home;
+    else if(r.is_live) score = '● LIVE';
+    
+    cardsHTML += `<div class="rc${r.has_edge ? ' edge' : ''}">
+      <div class="rc-date">${dateStr}</div>
+      <div class="rc-top">
+        <div class="rc-game">${away} <span class="vs">@</span> ${home}</div>
+        <div class="rc-result ${resClass}">${resText}</div>
+      </div>
+      ${r.has_edge ? `<div class="rc-row"><span class="rc-lbl">Pick</span><span class="rc-v">${pick} ${fmtOdds(r.ml)}</span></div>` : ''}
+      ${r.edge ? `<div class="rc-row"><span class="rc-lbl">Edge</span><span class="rc-v green">+${r.edge.toFixed(1)}%</span></div>` : ''}
+      ${r.conf ? `<div class="rc-row"><span class="rc-lbl">Conf</span><span class="rc-v">${r.conf.replace('MEDIUM','MED')}</span></div>` : ''}
+      ${r.bt != null ? `<div class="rc-row"><span class="rc-lbl">BT Div</span><span class="rc-v${r.bt>=20?' amber':''}">${r.bt.toFixed(1)}</span></div>` : ''}
+      ${score ? `<div class="rc-row"><span class="rc-lbl">Score</span><span class="rc-v">${score}</span></div>` : ''}
+    </div>`;
+  });
+  cardsHTML += '</div>';
+  
+  container.innerHTML = tableHTML + cardsHTML;
+  
+  // Re-bind sort handlers
+  container.querySelectorAll('thead th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.sort;
+      if(sortCol === col) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+      else { sortCol = col; sortDir = 'desc'; }
+      container.querySelectorAll('thead th').forEach(t => {
+        t.classList.remove('sorted');
+        const arr = t.querySelector('.arrow');
+        if(arr) arr.textContent = '';
+      });
+      th.classList.add('sorted');
+      const arr = th.querySelector('.arrow');
+      if(arr) arr.textContent = sortDir === 'desc' ? '▼' : '▲';
+      applySort();
+      renderTable();
+    });
+  });
+  
+  const w = filteredRows.filter(r => r.pick_correct === true).length;
+  const l = filteredRows.filter(r => r.pick_correct === false).length;
+  footer.textContent = `${filteredRows.length} games · ${w} wins · ${l} losses · ${filteredRows.length - w - l} pending/no pick`;
+}
+
+// ─── FILTER EVENT HANDLERS ────────────────────────────
+document.querySelector('.filter-bar').addEventListener('click', e => {
+  const btn = e.target.closest('[data-filter]');
+  if(!btn) return;
+  
+  const filterType = btn.dataset.filter;
+  const val = btn.dataset.val;
+  
+  // Update active state
+  document.querySelectorAll(`[data-filter="${filterType}"]`).forEach(b => b.classList.remove('active','active-amber','active-blue'));
+  btn.classList.add('active');
+  
+  filters[filterType] = val;
+  applyFilters();
+});
+
+// ─── SORT EVENT HANDLERS ──────────────────────────────
+// Sort handlers are bound in renderTable() after each render
+
+// ─── MODEL TAB SWITCHING ──────────────────────────────
+document.querySelectorAll('.model-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if(tab.classList.contains('disabled')) return;
+    document.querySelectorAll('.model-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    
+    const model = tab.dataset.model;
+    document.getElementById('ncaab-content').style.display = model === 'ncaab' ? '' : 'none';
+    document.getElementById('mlb-content').style.display = model === 'mlb' ? '' : 'none';
+    document.getElementById('stonks-content').style.display = model === 'stonks' ? '' : 'none';
+    currentModel = model;
+  });
+});
+
+// ─── INIT ─────────────────────────────────────────────
+async function init(){
+  await loadAllNCAAB();
+  applyFilters();
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edge Finder v3.2 — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0b0d14;
+    --bg-card: #12141f;
+    --bg-card-hover: #181b2a;
+    --border: #1a1d2e;
+    --border-light: #2a2d3e;
+    --text-primary: #e2e5ed;
+    --text-secondary: #c8cdd8;
+    --text-muted: #6b7280;
+    --text-dim: #8a8fa3;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #60a5fa;
+    --yellow: #f59e0b;
+    --purple: #a78bfa;
+    --gray: #94a3b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg-primary); color: var(--text-secondary); font-family: 'Outfit', sans-serif; min-height: 100vh; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Header */
+  .header { padding: 20px 24px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #0f1119, var(--bg-primary)); }
+  .header-top { display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 22px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; display: inline; }
+  .header .version { font-size: 12px; color: var(--blue); margin-left: 10px; }
+  .header .subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .header .status { font-size: 10px; padding: 4px 10px; border-radius: 4px; font-weight: 600; }
+  .status-live { background: #22c55e15; color: var(--green); }
+  .status-error { background: #ef444415; color: var(--red); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; margin-top: 16px; }
+  .tab { padding: 8px 20px; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; font-family: 'Outfit', sans-serif; transition: all 0.2s; }
+  .tab:hover { color: var(--text-secondary); }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--blue); font-weight: 600; }
+
+  /* Content */
+  .content { padding: 20px 24px; max-width: 1000px; margin: 0 auto; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Filter buttons */
+  .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border-light); background: transparent; color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+  .filter-btn.active { border-color: var(--blue); background: #60a5fa15; color: var(--blue); }
+  .filter-btn.active-green { border-color: var(--green); background: #22c55e15; color: var(--green); }
+  .filter-btn.active-red { border-color: var(--red); background: #ef444415; color: var(--red); }
+  .filter-btn.active-yellow { border-color: var(--yellow); background: #f59e0b15; color: var(--yellow); }
+
+  /* Summary cards */
+  .summary-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .summary-card { padding: 10px 16px; background: var(--bg-card); border-radius: 8px; min-width: 120px; }
+  .summary-card .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .summary-card .value { font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+  /* Edge Cards */
+  .edge-card { background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%); border: 1px solid #ffffff08; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; border-left: 3px solid var(--green); }
+  .edge-card:hover { background: var(--bg-card-hover); }
+  .edge-card.live { border-left-color: var(--red); }
+  .edge-card.caution { border-left-color: var(--yellow); }
+  .edge-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .edge-card .badges { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  .edge-card .game-name { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .edge-card .pick-line { font-size: 12px; color: var(--blue); font-weight: 500; }
+  .edge-card .edge-val { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+  .edge-card .edge-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .edge-card .sizing { font-size: 12px; color: var(--text-secondary); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+  .edge-details { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); display: none; }
+  .edge-card.expanded .edge-details { display: block; }
+  .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Signal bars */
+  .signal-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .signal-label { font-size: 11px; color: var(--text-dim); width: 36px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+  .signal-track { flex: 1; height: 10px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .signal-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .signal-val { font-size: 11px; color: var(--text-secondary); width: 36px; font-family: 'JetBrains Mono', monospace; }
+  .signal-row.small .signal-label { font-size: 10px; width: 28px; }
+  .signal-row.small .signal-track { height: 6px; }
+  .signal-row.small .signal-val { font-size: 10px; width: 30px; }
+
+  /* Divergence warning */
+  .div-warning { font-size: 10px; color: var(--yellow); margin-top: 6px; padding: 4px 8px; background: #f59e0b11; border-radius: 4px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+  th { padding: 8px 6px; text-align: center; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); }
+  th:first-child { text-align: left; }
+  td { padding: 6px; text-align: center; border-bottom: 1px solid var(--border); }
+  td:first-child { text-align: left; color: var(--text-secondary); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr.has-edge { background: #22c55e06; }
+  .table-footer { margin-top: 12px; font-size: 10px; color: var(--text-muted); }
+  .sort-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border-light); background: transparent; color: var(--text-muted); cursor: pointer; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+  .sort-btn.active { border-color: var(--blue); background: #60a5fa15; color: var(--blue); }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-box { padding: 14px 16px; background: var(--bg-card); border-radius: 8px; }
+  .stat-box .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .stat-box .stat-value { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .stat-box .stat-sub { font-size: 11px; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chart-box { background: var(--bg-card); border-radius: 8px; padding: 16px; }
+  .chart-title { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Signals tab */
+  .scatter-info { font-size: 10px; color: var(--text-muted); margin-bottom: 8px; }
+  .convergence-card { padding: 10px 14px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border); margin-bottom: 8px; }
+  .conv-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .conv-game { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+  .conv-edge { font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+  .live-dot { color: var(--red); margin-right: 4px; }
+
+  @media (max-width: 700px) {
+    .details-grid { grid-template-columns: 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    .summary-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>EDGE FINDER</h1>
+      <span class="version mono">v3.2</span>
+      <div class="subtitle">4-Signal Model │ 55% Books + 45% BT + Player Impact vs Polymarket</div>
+    </div>
+    <div>
+      <span id="dataStatus" class="status mono status-live">LOADING...</span>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;text-align:right" id="timestamp"></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(0)">Edge Picks</button>
+    <button class="tab" onclick="switchTab(1)">All Games</button>
+    <button class="tab" onclick="switchTab(2)">Stats</button>
+    <button class="tab" onclick="switchTab(3)">Signals</button>
+  </div>
+</div>
+
+<div class="content">
+  <!-- TAB 0: Edge Picks -->
+  <div id="tab0" class="tab-content active">
+    <div class="filters" id="edgeFilters"></div>
+    <div class="summary-row" id="edgeSummary"></div>
+    <div id="edgeCards"></div>
+  </div>
+
+  <!-- TAB 1: All Games -->
+  <div id="tab1" class="tab-content">
+    <div class="filters" id="gameFilters"></div>
+    <div style="overflow-x:auto"><table id="gamesTable"><thead id="gamesHead"></thead><tbody id="gamesBody"></tbody></table></div>
+    <div class="table-footer" id="gamesFooter"></div>
+  </div>
+
+  <!-- TAB 2: Stats -->
+  <div id="tab2" class="tab-content">
+    <div class="stats-grid" id="statsCards"></div>
+    <div class="chart-box" style="margin-bottom:20px">
+      <div class="chart-title">Cumulative P&L — "If You Followed The Model"</div>
+      <div style="position:relative;height:200px;width:100%"><canvas id="plChart"></canvas></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box"><div class="chart-title">BT Divergence Buckets</div><div style="position:relative;height:200px;width:100%"><canvas id="divChart"></canvas></div><div id="divLabels" style="display:flex;gap:12px;margin-top:8px"></div></div>
+      <div class="chart-box"><div class="chart-title">Daily Performance</div><div style="position:relative;height:200px;width:100%"><canvas id="dailyChart"></canvas></div></div>
+    </div>
+    <div style="margin-top:24px">
+      <div class="chart-title" style="margin-bottom:12px">📋 Complete Bet Log — All Model-Advised Picks</div>
+      <div style="overflow-x:auto"><table id="betLogTable"><thead id="betLogHead"></thead><tbody id="betLogBody"></tbody></table></div>
+      <div id="betLogFooter" class="table-footer" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Signals -->
+  <div id="tab3" class="tab-content">
+    <div class="chart-box" style="margin-bottom:24px">
+      <div class="chart-title">BT vs Books — All Games</div>
+      <div class="scatter-info">Green = has edge. Gray = no edge. Diagonal = perfect agreement.</div>
+      <div style="position:relative;height:300px;width:100%"><canvas id="scatterChart"></canvas></div>
+    </div>
+    <div class="chart-title">Signal Convergence — Edge Picks</div>
+    <div id="convergenceCards" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA LOADING
+// ══════════════════════════════════════════
+let DATA = { edges: [], allGames: [], allGamesByDate: {}, availableDates: [], stats: null };
+let currentFilter = "ALL";
+let currentSort = "model";
+let showEdgeOnly = false;
+let selectedDate = "latest";
+
+async function loadData() {
+  const status = document.getElementById('dataStatus');
+  const tsEl = document.getElementById('timestamp');
+
+  try {
+    // Load edges
+    const edgesResp = await fetch('latest_edges.json');
+    const edgesData = await edgesResp.json();
+    DATA.edges = edgesData.edges || [];
+
+    // Load ALL available all_games files (up to 14 days back)
+    const allLoadedGames = [];
+    DATA.allGamesByDate = {};
+    DATA.availableDates = [];
+    const today = new Date();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      try {
+        const resp = await fetch(`all_games_${dateStr}.json`);
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        const fileDate = dateStr;
+        for (const g of (data.games || [])) {
+          g._fileDate = fileDate;
+          allLoadedGames.push(g);
+        }
+      } catch(e) {}
+    }
+
+    // Determine actual game date for each game
+    // Priority: game_date field (new) > parse start_time > parse start display > file date
+    function getGameDate(g) {
+      if (g.game_date) return g.game_date;
+      if (g.start_time) {
+        try {
+          const dt = new Date(g.start_time);
+          // Convert to Eastern: subtract 5 hours from UTC
+          dt.setHours(dt.getHours() - 5);
+          return dt.toISOString().split('T')[0];
+        } catch(e) {}
+      }
+      if (g.start) {
+        // Parse "8:00 PM ET · Mar 10" or "11:00 AM ET · Mar 11"
+        const m = g.start.match(/(\w+)\s+(\d+)$/);
+        if (m) {
+          const months = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+          const mon = months[m[1]];
+          if (mon) return `2026-${mon}-${m[2].padStart(2,'0')}`;
+        }
+      }
+      return g._fileDate;
+    }
+
+    // Deduplicate games (same game can appear in multiple file dates)
+    const seen = new Set();
+    for (const g of allLoadedGames) {
+      const gameDate = getGameDate(g);
+      g._date = gameDate;
+      g._dateShort = gameDate ? gameDate.slice(5) : '';
+
+      // Dedup key: game name + game date
+      const dedupKey = `${g.game}|${gameDate}`;
+      if (seen.has(dedupKey)) {
+        // Keep the version with more data (scored > unscored)
+        const existing = DATA.allGamesByDate[gameDate]?.find(x => x.game === g.game);
+        if (existing && !existing.winner && g.winner) {
+          // Replace with scored version
+          const idx = DATA.allGamesByDate[gameDate].indexOf(existing);
+          DATA.allGamesByDate[gameDate][idx] = g;
+        }
+        continue;
+      }
+      seen.add(dedupKey);
+
+      if (!DATA.allGamesByDate[gameDate]) DATA.allGamesByDate[gameDate] = [];
+      DATA.allGamesByDate[gameDate].push(g);
+    }
+
+    DATA.availableDates = Object.keys(DATA.allGamesByDate).sort();
+
+    // Set default view to latest date
+    if (DATA.availableDates.length > 0) {
+      selectedDate = DATA.availableDates[DATA.availableDates.length - 1];
+    }
+    updateAllGamesFromDate();
+
+    // Build cumulative stats from all available all_games files
+    await buildCumulativeStats();
+
+    status.textContent = `${DATA.edges.length} EDGES │ ${DATA.availableDates.length} DAYS`;
+    status.className = 'status mono status-live';
+    tsEl.textContent = edgesData.timestamp ? new Date(edgesData.timestamp).toLocaleString() : '';
+
+    renderAll();
+  } catch(e) {
+    status.textContent = 'FILE NOT FOUND';
+    status.className = 'status mono status-error';
+    tsEl.textContent = 'Serve from Edge Finder directory';
+    console.error(e);
+  }
+}
+
+function updateAllGamesFromDate() {
+  if (selectedDate === 'all') {
+    // Combine all dates
+    DATA.allGames = [];
+    for (const dateStr of DATA.availableDates) {
+      DATA.allGames.push(...(DATA.allGamesByDate[dateStr] || []));
+    }
+  } else {
+    DATA.allGames = DATA.allGamesByDate[selectedDate] || [];
+  }
+}
+
+async function buildCumulativeStats() {
+  let booksW = 0, booksL = 0, edgeW = 0, edgeL = 0;
+  const divBuckets = { '0-10': [0,0], '11-14': [0,0], '15-19': [0,0], '20+': [0,0] };
+  const daily = [];
+  const betLog = []; // individual bet records
+
+  // Historical P&L: "if you followed the model" tracker
+  const bankroll = 5000;
+  let totalWagered = 0, totalProfit = 0;
+  const dailyPL = [];
+  let cumProfit = 0;
+
+  for (const dateStr of DATA.availableDates) {
+    const games = DATA.allGamesByDate[dateStr] || [];
+    let dayEdgeW = 0, dayEdgeL = 0;
+    let dayWagered = 0, dayProfit = 0;
+
+    for (const g of games) {
+      if (g.books_correct === true && !g.odds_stale) booksW++;
+      if (g.books_correct === false && !g.odds_stale) booksL++;
+
+      if (g.pick_correct !== null && g.pick_correct !== undefined && g.has_edge && !g.is_live && !g.odds_stale) {
+        if (g.pick_correct) { edgeW++; dayEdgeW++; }
+        else { edgeL++; dayEdgeL++; }
+
+        const div = g.bt_divergence;
+        if (div != null) {
+          const bucket = div <= 10 ? '0-10' : div <= 14 ? '11-14' : div <= 19 ? '15-19' : '20+';
+          divBuckets[bucket][g.pick_correct ? 0 : 1]++;
+        }
+
+        // Determine ML and book for the picked side
+        let ml = null, book = '';
+        const pickSide = g.pick_side || g.side;
+        if (pickSide === g.home) { ml = g.home_ml; book = g.home_ml_book || ''; }
+        else if (pickSide === g.away) { ml = g.away_ml; book = g.away_ml_book || ''; }
+
+        // Model prob: handle both old format (model_prob) and new (model_home/away_prob)
+        let modelP = g.model_prob;
+        if (!modelP && g.model_home_prob != null) {
+          modelP = pickSide === g.home ? g.model_home_prob : g.model_away_prob;
+        }
+        let booksP = g.books_prob;
+        if (!booksP && g.books_home_prob != null) {
+          booksP = pickSide === g.home ? g.books_home_prob : g.books_away_prob;
+        }
+        let btP = g.bt_prob;
+        if (!btP && g.bt_home_prob != null) {
+          btP = pickSide === g.home ? g.bt_home_prob : g.bt_away_prob;
+        }
+        let pmP = g.pm_prob;
+        if (!pmP && g.pm_home_prob != null) {
+          pmP = pickSide === g.home ? g.pm_home_prob : g.pm_away_prob;
+        }
+
+        // P&L calculation
+        let wager = 0, pnl = 0;
+        if (ml != null) {
+          wager = g.kelly_pct ? (bankroll * g.kelly_pct / 100) : 100;
+          dayWagered += wager;
+          if (g.pick_correct) {
+            pnl = ml > 0 ? (wager * ml / 100) : (wager * 100 / Math.abs(ml));
+            dayProfit += pnl;
+          } else {
+            pnl = -wager;
+            dayProfit -= wager;
+          }
+        }
+
+        // Build bet record
+        const betDate = g._date || dateStr;
+        betLog.push({
+          date: betDate,
+          dateShort: betDate.slice(5),
+          game: g.game,
+          pick: pickSide,
+          ml: ml,
+          mlStr: ml != null ? (ml > 0 ? '+' + ml : '' + ml) : '—',
+          book: book,
+          kelly: g.kelly_pct || null,
+          wager: wager,
+          edge: g.edge || 0,
+          confidence: g.confidence || '',
+          confScore: g.conf_score || 0,
+          modelProb: modelP,
+          booksProb: booksP,
+          btProb: btP,
+          pmProb: pmP,
+          btDiv: g.bt_divergence,
+          correct: g.pick_correct,
+          pnl: pnl,
+          winner: g.winner || '',
+          score: g.home_score != null && g.away_score != null ? `${g.away_score}-${g.home_score}` : '',
+        });
+      }
+    }
+    daily.push({
+      date: dateStr.slice(5),
+      games: games.length,
+      edgeW: dayEdgeW, edgeL: dayEdgeL,
+    });
+
+    if (dayEdgeW + dayEdgeL > 0) {
+      totalWagered += dayWagered;
+      totalProfit += dayProfit;
+      cumProfit += dayProfit;
+      dailyPL.push({ date: dateStr.slice(5), wagered: dayWagered, profit: dayProfit, cumProfit: cumProfit });
+    }
+  }
+
+  DATA.stats = {
+    books: { wins: booksW, losses: booksL },
+    edge: { wins: edgeW, losses: edgeL },
+    divBuckets, daily, betLog,
+    pl: { totalWagered, totalProfit, roi: totalWagered > 0 ? (totalProfit / totalWagered * 100) : 0, dailyPL },
+  };
+}
+
+// ══════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════
+function switchTab(idx) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-content').forEach((t, i) => t.classList.toggle('active', i === idx));
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+const confColor = c => c === 'HIGH' ? 'var(--green)' : c === 'MEDIUM' ? 'var(--yellow)' : 'var(--gray)';
+const confStars = s => s >= 20 ? '★★★' : s >= 15 ? '★★☆' : s >= 10 ? '★☆☆' : '☆☆☆';
+const sectionOf = e => e.bt_divergence >= 20 ? 'CAUTION' : e.is_live ? 'LIVE' : 'PRE-GAME';
+const sectionColor = s => ({ 'PRE-GAME': 'var(--green)', 'LIVE': 'var(--red)', 'CAUTION': 'var(--yellow)' }[s] || 'var(--gray)');
+
+function signalBar(label, value, color, small) {
+  const cls = small ? 'signal-row small' : 'signal-row';
+  return `<div class="${cls}">
+    <span class="signal-label">${label}</span>
+    <div class="signal-track"><div class="signal-fill" style="width:${Math.min(value,100)}%;background:${color}"></div></div>
+    <span class="signal-val">${value}%</span>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════
+function renderAll() {
+  renderEdgePicks();
+  renderAllGames();
+  renderStats();
+  renderSignals();
+}
+
+// ══════════════════════════════════════════
+// TAB 0: EDGE PICKS
+// ══════════════════════════════════════════
+function renderEdgePicks() {
+  const edges = DATA.edges;
+  const preGame = edges.filter(e => !e.is_live && (e.bt_divergence||0) < 20);
+  const live = edges.filter(e => e.is_live && (e.bt_divergence||0) < 20);
+  const caution = edges.filter(e => (e.bt_divergence||0) >= 20);
+
+  // Filters
+  const counts = { ALL: edges.length, PRE: preGame.length, LIVE: live.length, CAUTION: caution.length };
+  const colors = { ALL: '', PRE: '-green', LIVE: '-red', CAUTION: '-yellow' };
+  document.getElementById('edgeFilters').innerHTML = Object.entries(counts).map(([k,v]) =>
+    `<button class="filter-btn ${currentFilter===k ? 'active'+colors[k] : ''}" onclick="currentFilter='${k}';renderEdgePicks()">${k==='ALL'?'All':k==='PRE'?'Pre-Game':k} (${v})</button>`
+  ).join('');
+
+  // Summary
+  const totalKelly = preGame.reduce((s,e) => s + (e.kelly_pct||0), 0);
+  const bankroll = 5000;
+  const totalDollars = bankroll * totalKelly / 100;
+
+  // Calculate projected EV for each pre-game bet
+  // EV = (model_prob * decimal_odds - 1) * dollars_wagered
+  let projectedEV = 0;
+  for (const e of preGame) {
+    const prob = (e.model_prob || 50) / 100;
+    const ml = e.best_ml || -110;
+    const decimal = ml > 0 ? (ml / 100 + 1) : (100 / Math.abs(ml) + 1);
+    const wager = bankroll * (e.kelly_pct || 0) / 100;
+    const ev = (prob * decimal - 1) * wager;
+    projectedEV += ev;
+  }
+
+  // Projected if all hit vs all miss
+  let projWin = 0, projLoss = 0;
+  for (const e of preGame) {
+    const ml = e.best_ml || -110;
+    const wager = bankroll * (e.kelly_pct || 0) / 100;
+    if (ml > 0) { projWin += wager * ml / 100; }
+    else { projWin += wager * 100 / Math.abs(ml); }
+    projLoss += wager;
+  }
+
+  document.getElementById('edgeSummary').innerHTML = `
+    <div class="summary-card" style="border:1px solid var(--green)22"><div class="label">Pre-Game Bets</div><div class="value" style="color:var(--green)">${preGame.length}</div></div>
+    <div class="summary-card" style="border:1px solid var(--blue)22"><div class="label">Exposure</div><div class="value mono" style="color:var(--blue)">${totalKelly.toFixed(1)}%</div></div>
+    <div class="summary-card" style="border:1px solid #ffffff11"><div class="label">Total Wagered</div><div class="value mono" style="color:var(--text-secondary)">$${totalDollars.toFixed(0)}</div></div>
+    <div class="summary-card" style="border:1px solid var(--green)22"><div class="label">Projected EV</div><div class="value mono" style="color:${projectedEV>=0?'var(--green)':'var(--red)'}">$${projectedEV>=0?'+':''}${projectedEV.toFixed(0)}</div><div class="stat-sub mono" style="color:var(--text-muted);font-size:10px">${(projectedEV/totalDollars*100).toFixed(1)}% ROI</div></div>
+    <div class="summary-card" style="border:1px solid #ffffff08"><div class="label">If All Hit</div><div class="value mono" style="color:var(--green);font-size:16px">+$${projWin.toFixed(0)}</div></div>
+    <div class="summary-card" style="border:1px solid #ffffff08"><div class="label">If All Miss</div><div class="value mono" style="color:var(--red);font-size:16px">-$${projLoss.toFixed(0)}</div></div>
+  `;
+
+  // Filter + sort
+  let filtered = [...edges];
+  if (currentFilter === 'PRE') filtered = preGame;
+  if (currentFilter === 'LIVE') filtered = live;
+  if (currentFilter === 'CAUTION') filtered = caution;
+  filtered.sort((a,b) => (b.conf_score||0) - (a.conf_score||0));
+
+  document.getElementById('edgeCards').innerHTML = filtered.map((e, i) => {
+    const section = sectionOf(e);
+    const sc = sectionColor(section);
+    const cardClass = section === 'LIVE' ? 'edge-card live' : section === 'CAUTION' ? 'edge-card caution' : 'edge-card';
+    const btDiv = e.bt_divergence || 0;
+
+    return `<div class="${cardClass}" id="edge-${i}" onclick="document.getElementById('edge-${i}').classList.toggle('expanded')">
+      <div class="edge-card-header">
+        <div style="flex:1">
+          <div class="badges">
+            <span style="font-size:14px;letter-spacing:1px;color:${confColor(e.confidence)}">${confStars(e.conf_score||0)}</span>
+            <span class="badge" style="background:${sc}22;color:${sc}">${section}</span>
+            ${e.is_live ? '<span class="badge" style="background:#ef444422;color:var(--red)">🔴 LIVE</span>' : ''}
+            ${e.start ? `<span style="font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace">📅 ${e.start.split('·')[1]?.trim() || e.start}</span>` : ''}
+            <span class="mono" style="font-size:10px;color:var(--text-muted)">#${i+1}</span>
+          </div>
+          <div class="game-name">${e.game}</div>
+          <div class="pick-line">▶ ${e.side} ${e.best_odds} @ ${e.best_book}</div>
+        </div>
+        <div style="text-align:right;min-width:90px">
+          <div class="edge-val" style="color:${confColor(e.confidence)}">+${e.edge}%</div>
+          <div class="edge-sub">edge</div>
+          <div class="sizing">${(e.kelly_pct||0).toFixed(1)}% / $${(5000*(e.kelly_pct||0)/100).toFixed(0)}</div>
+          ${(() => {
+            const prob = (e.model_prob||50)/100;
+            const ml = e.best_ml||-110;
+            const dec = ml > 0 ? (ml/100+1) : (100/Math.abs(ml)+1);
+            const wager = 5000*(e.kelly_pct||0)/100;
+            const ev = (prob * dec - 1) * wager;
+            return wager > 0 ? `<div style="font-size:10px;margin-top:2px;color:${ev>=0?'var(--green)':'var(--red)'};font-family:'JetBrains Mono',monospace">EV $${ev>=0?'+':''}${ev.toFixed(0)}</div>` : '';
+          })()}
+        </div>
+      </div>
+      <div class="edge-details">
+        <div class="details-grid">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Signal Convergence</div>
+            ${signalBar('BKS', e.sportsbook_prob||0, 'var(--gray)')}
+            ${signalBar('BT', e.barttorvik_prob||0, 'var(--purple)')}
+            ${e.polymarket_prob ? signalBar('PM', e.polymarket_prob, 'var(--blue)') : ''}
+            ${signalBar('MDL', e.model_prob||0, confColor(e.confidence))}
+            ${btDiv >= 15 ? `<div class="div-warning">⚠️ BT Divergence: ${btDiv}pt gap</div>` : ''}
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Matchup</div>
+            ${e.home_stats ? `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">🏠 ${e.home_stats.name} (${e.home_stats.record}) ${e.home_stats.margin!=null ? `<span style="color:${e.home_stats.margin>0?'var(--green)':'var(--red)'}">${e.home_stats.margin>0?'+':''}${e.home_stats.margin}</span>` : ''}</div>` : ''}
+            ${e.away_stats ? `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">✈️ ${e.away_stats.name} (${e.away_stats.record}) ${e.away_stats.margin!=null ? `<span style="color:${e.away_stats.margin>0?'var(--green)':'var(--red)'}">${e.away_stats.margin>0?'+':''}${e.away_stats.margin}</span>` : ''}</div>` : ''}
+            ${e.star_note ? `<div style="font-size:10px;color:var(--yellow);margin-top:6px">${e.star_note}</div>` : ''}
+            <div style="font-size:10px;color:var(--text-muted);margin-top:8px">🕐 ${e.start||''}</div>
+            <div style="font-size:10px;color:var(--text-muted)">Score: ${e.conf_score||0}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// TAB 1: ALL GAMES
+// ══════════════════════════════════════════
+function renderAllGames() {
+  const games = DATA.allGames;
+  if (!games.length && DATA.availableDates.length === 0) { document.getElementById('gamesBody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted)">No all_games data loaded</td></tr>'; return; }
+
+  // Date picker + sort buttons
+  const dateOptions = DATA.availableDates.map(d => {
+    const label = d.slice(5); // "03-10"
+    const count = (DATA.allGamesByDate[d]||[]).length;
+    return `<button class="filter-btn ${selectedDate===d?'active':''}" onclick="selectedDate='${d}';updateAllGamesFromDate();renderAllGames()">${label} (${count})</button>`;
+  }).join('');
+  const allCount = Object.values(DATA.allGamesByDate).reduce((s,g) => s + g.length, 0);
+
+  document.getElementById('gameFilters').innerHTML = `
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <span style="font-size:11px;color:var(--text-muted)">Date:</span>
+      ${dateOptions}
+      <button class="filter-btn ${selectedDate==='all'?'active':''}" onclick="selectedDate='all';updateAllGamesFromDate();renderAllGames()">All Days (${allCount})</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text-muted)">Sort:</span>
+      ${['model','edge','conf'].map(s => `<button class="sort-btn ${currentSort===s?'active':''}" onclick="currentSort='${s}';renderAllGames()">${s==='model'?'Model %':s==='edge'?'Edge':'Score'}</button>`).join('')}
+      <button class="sort-btn ${showEdgeOnly?'active':''}" style="margin-left:8px" onclick="showEdgeOnly=!showEdgeOnly;renderAllGames()">Edge Only</button>
+    </div>
+  `;
+
+  let filtered = [...games];
+  if (showEdgeOnly) filtered = filtered.filter(g => g.has_edge);
+
+  // Group by date if viewing "all"
+  const showDateCol = selectedDate === 'all';
+
+  filtered.sort((a,b) => {
+    // If "all", sort by date first (desc), then by sort key
+    if (showDateCol) {
+      const dateComp = (b._date || '').localeCompare(a._date || '');
+      if (dateComp !== 0) return dateComp;
+    }
+    const gm = g => Math.max(g.model_home_prob||g.pre_game_model_home||g.books_home_prob||50, g.model_away_prob||g.pre_game_model_away||g.books_away_prob||50);
+    if (currentSort === 'model') return gm(b) - gm(a);
+    if (currentSort === 'edge') return (b.edge||0) - (a.edge||0);
+    if (currentSort === 'conf') return (b.conf_score||0) - (a.conf_score||0);
+    return 0;
+  });
+
+  const headers = showDateCol ? ['Date','Game','Fav','Model','Books','BT','PM','Edge','','Notes'] : ['Game','Fav','Model','Books','BT','PM','Edge','','Notes'];
+  document.getElementById('gamesHead').innerHTML = '<tr>' + headers.map((h,i) => `<th${i===(showDateCol?1:0)?' style="text-align:left"':''}>${h}</th>`).join('') + '</tr>';
+
+  let lastDate = '';
+  document.getElementById('gamesBody').innerHTML = filtered.map(g => {
+    const mh = g.model_home_prob ?? g.pre_game_model_home ?? g.books_home_prob ?? 50;
+    const ma = g.model_away_prob ?? g.pre_game_model_away ?? g.books_away_prob ?? 50;
+    const fav = mh >= ma ? 'H' : 'A';
+    const modelP = Math.max(mh, ma);
+    const booksP = fav==='H' ? g.books_home_prob : g.books_away_prob;
+    const btP = fav==='H' ? g.bt_home_prob : g.bt_away_prob;
+    const pmP = fav==='H' ? g.pm_home_prob : g.pm_away_prob;
+
+    const btDiv = fav==='H' ? (g.bt_divergence_home || Math.abs((g.bt_home_prob||0)-(g.books_home_prob||0))) : (g.bt_divergence_away || Math.abs((g.bt_away_prob||0)-(g.books_away_prob||0)));
+    const notes = [];
+    if (g.is_live) notes.push('<span style="color:var(--red)">🔴 LIVE</span>');
+    if (btDiv >= 20) notes.push('<span style="color:var(--yellow)">⚠️ ' + Math.round(btDiv) + 'pt</span>');
+    else if (btDiv >= 15) notes.push('<span style="color:var(--text-muted)">⚡ ' + Math.round(btDiv) + 'pt</span>');
+
+    // Result indicator if scored
+    if (g.pick_correct === true) notes.push('<span style="color:var(--green)">✓</span>');
+    else if (g.pick_correct === false) notes.push('<span style="color:var(--red)">✗</span>');
+
+    // Date header row for "all" view
+    let dateHeader = '';
+    if (showDateCol && g._date !== lastDate) {
+      lastDate = g._date;
+      const gameCount = filtered.filter(x => x._date === g._date).length;
+      dateHeader = `<tr><td colspan="${headers.length}" style="text-align:left;padding:10px 6px 4px;font-size:12px;font-weight:600;color:var(--blue);border-bottom:1px solid var(--blue)33;background:var(--bg-card)">📅 ${g._date} — ${gameCount} games</td></tr>`;
+    }
+
+    const dateCol = showDateCol ? `<td style="font-size:10px;color:var(--text-muted)">${g._dateShort||''}</td>` : '';
+
+    return `${dateHeader}<tr class="${g.has_edge?'has-edge':''}" style="${btDiv>=20 && g.has_edge?'background:#f59e0b06':''}">
+      ${dateCol}
+      <td>${g.is_live?'<span class="live-dot">●</span>':''}${g.game}</td>
+      <td style="color:${fav==='H'?'var(--blue)':'var(--yellow)'}">${fav}</td>
+      <td style="color:var(--text-primary);font-weight:600">${modelP?modelP.toFixed(0)+'%':'—'}</td>
+      <td style="color:var(--gray)">${booksP?booksP.toFixed(0)+'%':'—'}</td>
+      <td style="color:var(--purple)">${btP?btP.toFixed(0)+'%':'—'}</td>
+      <td style="color:var(--blue)">${pmP?pmP.toFixed(0)+'%':'—'}</td>
+      <td style="color:${g.edge?'var(--green)':'#3a3d4e'};font-weight:${g.edge?600:400}">${g.edge?'+'+g.edge.toFixed(1)+'%':'—'}</td>
+      <td>${g.has_edge?`<span class="badge" style="background:${confColor(g.confidence)}22;color:${confColor(g.confidence)}">${g.confidence||''}</span>`:''}</td>
+      <td style="font-size:10px">${notes.join(' ')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('gamesFooter').textContent =
+    `${games.length} games │ ${games.filter(g=>g.has_pm).length} with PM │ ${games.filter(g=>g.has_edge).length} with edge │ ${games.filter(g=>g.is_live).length} live`;
+}
+
+// ══════════════════════════════════════════
+// TAB 2: STATS
+// ══════════════════════════════════════════
+function renderStats() {
+  const s = DATA.stats;
+  if (!s) return;
+
+  const edgePct = (s.edge.wins+s.edge.losses)>0 ? (s.edge.wins/(s.edge.wins+s.edge.losses)*100).toFixed(1) : '—';
+  const booksPct = (s.books.wins+s.books.losses)>0 ? (s.books.wins/(s.books.wins+s.books.losses)*100).toFixed(1) : '—';
+  const pl = s.pl || { totalWagered: 0, totalProfit: 0, roi: 0, dailyPL: [] };
+
+  document.getElementById('statsCards').innerHTML = [
+    { label: 'Edge Picks', value: `${s.edge.wins}-${s.edge.losses}`, sub: `${edgePct}%`, color: 'var(--green)' },
+    { label: 'Books Baseline', value: `${s.books.wins}-${s.books.losses}`, sub: `${booksPct}%`, color: 'var(--gray)' },
+    { label: 'Model P&L', value: `$${pl.totalProfit>=0?'+':''}${pl.totalProfit.toFixed(0)}`, sub: `${pl.roi>=0?'+':''}${pl.roi.toFixed(1)}% ROI`, color: pl.totalProfit >= 0 ? 'var(--green)' : 'var(--red)' },
+    { label: 'Total Wagered', value: `$${pl.totalWagered.toFixed(0)}`, sub: `${s.edge.wins+s.edge.losses} bets`, color: 'var(--blue)' },
+  ].map(c => `<div class="stat-box" style="border:1px solid ${c.color}22">
+    <div class="stat-label">${c.label}</div>
+    <div class="stat-value" style="color:${c.color}">${c.value}</div>
+    <div class="stat-sub" style="color:${c.color}aa">${c.sub}</div>
+  </div>`).join('');
+
+  // Divergence chart
+  const divLabels = Object.keys(s.divBuckets);
+  const divWins = divLabels.map(k => s.divBuckets[k][0]);
+  const divLosses = divLabels.map(k => s.divBuckets[k][1]);
+
+  const divCtx = document.getElementById('divChart').getContext('2d');
+  if (window._divChart) window._divChart.destroy();
+  window._divChart = new Chart(divCtx, {
+    type: 'bar',
+    data: {
+      labels: divLabels,
+      datasets: [
+        { label: 'Wins', data: divWins, backgroundColor: '#22c55e' },
+        { label: 'Losses', data: divLosses, backgroundColor: '#ef4444' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { ticks: { color: '#6b7280' }, grid: { color: '#1a1d2e' } }, y: { ticks: { color: '#6b7280' }, grid: { color: '#1a1d2e' } } },
+      plugins: { legend: { labels: { color: '#6b7280', font: { size: 10 } } } },
+    }
+  });
+
+  document.getElementById('divLabels').innerHTML = divLabels.map((k,i) => {
+    const t = divWins[i]+divLosses[i];
+    const pct = t > 0 ? Math.round(divWins[i]/t*100) : 0;
+    const c = pct >= 70 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+    return `<span class="mono" style="font-size:10px;color:var(--text-muted)">${k}: <span style="color:${c}">${t>0?pct+'%':'—'}</span></span>`;
+  }).join('');
+
+  // Daily chart
+  const dailyData = s.daily.filter(d => d.edgeW + d.edgeL > 0);
+  const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+  if (window._dailyChart) window._dailyChart.destroy();
+  window._dailyChart = new Chart(dailyCtx, {
+    type: 'bar',
+    data: {
+      labels: dailyData.map(d => d.date),
+      datasets: [
+        { label: 'Wins', data: dailyData.map(d => d.edgeW), backgroundColor: '#22c55e' },
+        { label: 'Losses', data: dailyData.map(d => d.edgeL), backgroundColor: '#ef4444' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true, ticks: { color: '#6b7280' }, grid: { color: '#1a1d2e' } }, y: { stacked: true, ticks: { color: '#6b7280' }, grid: { color: '#1a1d2e' } } },
+      plugins: { legend: { labels: { color: '#6b7280', font: { size: 10 } } } },
+    }
+  });
+
+  // Cumulative P&L chart
+  const plData = pl.dailyPL || [];
+  if (plData.length > 0) {
+    const plCtx = document.getElementById('plChart').getContext('2d');
+    if (window._plChart) window._plChart.destroy();
+    window._plChart = new Chart(plCtx, {
+      type: 'line',
+      data: {
+        labels: plData.map(d => d.date),
+        datasets: [{
+          label: 'Cumulative P&L',
+          data: plData.map(d => Math.round(d.cumProfit)),
+          borderColor: plData[plData.length-1].cumProfit >= 0 ? '#22c55e' : '#ef4444',
+          backgroundColor: plData[plData.length-1].cumProfit >= 0 ? '#22c55e15' : '#ef444415',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: plData.map(d => d.profit >= 0 ? '#22c55e' : '#ef4444'),
+        }, {
+          label: 'Daily P&L',
+          data: plData.map(d => Math.round(d.profit)),
+          type: 'bar',
+          backgroundColor: plData.map(d => d.profit >= 0 ? '#22c55e44' : '#ef444444'),
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: '#6b7280' }, grid: { color: '#1a1d2e' } },
+          y: { ticks: { color: '#6b7280', callback: v => '$' + v }, grid: { color: '#1a1d2e' } },
+        },
+        plugins: {
+          legend: { labels: { color: '#6b7280', font: { size: 10 } } },
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y>=0?'+':''}${ctx.parsed.y}` } },
+        },
+      }
+    });
+  }
+
+  // Bet log table
+  const bets = s.betLog || [];
+  if (bets.length > 0) {
+    document.getElementById('betLogHead').innerHTML = '<tr>' +
+      ['Date','Pick','ML','Wager','Edge','Conf','Signals (M/B/BT/PM)','Div','Result','P&L','Cum'].map(h =>
+        `<th style="${h==='Pick'?'text-align:left':''}">${h}</th>`
+      ).join('') + '</tr>';
+
+    let runningPL = 0;
+    document.getElementById('betLogBody').innerHTML = bets.map(b => {
+      runningPL += b.pnl;
+      const resultIcon = b.correct ? '<span style="color:var(--green)">✓W</span>' : '<span style="color:var(--red)">✗L</span>';
+      const pnlColor = b.pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      const cumColor = runningPL >= 0 ? 'var(--green)' : 'var(--red)';
+      const divColor = (b.btDiv||0) >= 20 ? 'var(--yellow)' : (b.btDiv||0) >= 15 ? 'var(--text-muted)' : 'var(--green)';
+
+      // Compact signals: Model/Books/BT/PM
+      const sig = [
+        b.modelProb ? b.modelProb.toFixed(0) : '—',
+        b.booksProb ? b.booksProb.toFixed(0) : '—',
+        b.btProb ? b.btProb.toFixed(0) : '—',
+        b.pmProb ? b.pmProb.toFixed(0) : '—',
+      ].join('/');
+
+      // Short pick name: just the team, not full "Team Mascots"
+      const shortPick = b.pick.length > 22 ? b.pick.slice(0, 20) + '…' : b.pick;
+
+      return `<tr>
+        <td style="color:var(--text-muted);font-size:10px;white-space:nowrap">${b.dateShort}</td>
+        <td style="text-align:left;white-space:nowrap" title="${b.game}"><span style="color:var(--blue)">${shortPick}</span> <span style="color:var(--text-muted);font-size:9px">${b.book||''}</span></td>
+        <td style="font-weight:600">${b.mlStr}</td>
+        <td>$${b.wager.toFixed(0)}</td>
+        <td style="color:var(--green)">+${b.edge.toFixed(1)}%</td>
+        <td><span class="badge" style="background:${confColor(b.confidence)}22;color:${confColor(b.confidence)};font-size:9px">${b.confidence||'—'}</span></td>
+        <td style="font-size:10px;white-space:nowrap">${sig}</td>
+        <td style="color:${divColor}">${b.btDiv != null ? b.btDiv.toFixed(0) : '—'}</td>
+        <td style="white-space:nowrap">${resultIcon} ${b.score ? '<span style="font-size:9px;color:var(--text-muted)">' + b.score + '</span>' : ''}</td>
+        <td style="color:${pnlColor};font-weight:600;white-space:nowrap">$${b.pnl>=0?'+':''}${b.pnl.toFixed(0)}</td>
+        <td style="color:${cumColor};font-size:10px;white-space:nowrap">$${runningPL>=0?'+':''}${runningPL.toFixed(0)}</td>
+      </tr>`;
+    }).join('');
+
+    const wins = bets.filter(b => b.correct).length;
+    const losses = bets.filter(b => !b.correct).length;
+    const totalPnl = bets.reduce((s,b) => s + b.pnl, 0);
+    const totalWag = bets.reduce((s,b) => s + b.wager, 0);
+    document.getElementById('betLogFooter').innerHTML =
+      `${bets.length} bets │ ${wins}-${losses} (${bets.length>0?(wins/bets.length*100).toFixed(1):0}%) │ Wagered: $${totalWag.toFixed(0)} │ P&L: <span style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">$${totalPnl>=0?'+':''}${totalPnl.toFixed(0)}</span> │ ROI: <span style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">${totalWag>0?(totalPnl/totalWag*100).toFixed(1):0}%</span>`;
+  }
+}
+
+// ══════════════════════════════════════════
+// TAB 3: SIGNALS
+// ══════════════════════════════════════════
+function renderSignals() {
+  const games = DATA.allGames;
+  const edges = DATA.edges;
+
+  // Scatter: BT vs Books
+  const scatterData = games.filter(g => g.bt_home_prob != null && g.books_home_prob != null).map(g => {
+    const mh = g.model_home_prob ?? g.pre_game_model_home ?? g.books_home_prob ?? 50;
+    const fav = mh >= 50 ? 'home' : 'away';
+    const booksP = fav==='home' ? g.books_home_prob : g.books_away_prob;
+    const btP = fav==='home' ? g.bt_home_prob : g.bt_away_prob;
+    return { x: booksP, y: btP, hasEdge: g.has_edge, game: g.game, edge: g.edge || 0 };
+  });
+
+  const edgePoints = scatterData.filter(d => d.hasEdge);
+  const noEdgePoints = scatterData.filter(d => !d.hasEdge);
+
+  const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+  if (window._scatterChart) window._scatterChart.destroy();
+  window._scatterChart = new Chart(scatterCtx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Edge',
+          data: edgePoints,
+          backgroundColor: '#22c55ecc',
+          pointRadius: 6,
+        },
+        {
+          label: 'No Edge',
+          data: noEdgePoints,
+          backgroundColor: '#3a3d4e88',
+          pointRadius: 4,
+        },
+        {
+          label: 'Agreement Line',
+          data: [{x:20,y:20},{x:95,y:95}],
+          type: 'line',
+          borderColor: '#ffffff15',
+          borderDash: [5,5],
+          pointRadius: 0,
+          borderWidth: 1,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { title: { display: true, text: 'Books %', color: '#6b7280' }, min: 20, max: 100, ticks: { color: '#6b7280' }, grid: { color: '#1a1d2e' } },
+        y: { title: { display: true, text: 'BT %', color: '#6b7280' }, min: 20, max: 100, ticks: { color: '#6b7280' }, grid: { color: '#1a1d2e' } },
+      },
+      plugins: {
+        legend: { labels: { color: '#6b7280', font: { size: 10 } } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const pt = ctx.raw;
+              if (!pt.game) return `Books: ${pt.x}%, BT: ${pt.y}%`;
+              const parts = [pt.game];
+              parts.push(`Books: ${pt.x}%  BT: ${pt.y}%  Div: ${Math.abs(pt.y - pt.x).toFixed(0)}pt`);
+              if (pt.edge) parts.push(`Edge: +${pt.edge.toFixed(1)}%`);
+              return parts;
+            }
+          }
+        }
+      },
+    }
+  });
+
+  // Convergence cards
+  const convEdges = edges.filter(e => e.barttorvik_prob && e.sportsbook_prob);
+  document.getElementById('convergenceCards').innerHTML = convEdges.slice(0, 15).map(e => {
+    const gameName = (e.game.split('@')[1] || e.game).trim().split(' ').slice(0,2).join(' ');
+    return `<div class="convergence-card">
+      <div class="conv-header">
+        <span class="conv-game">${gameName}</span>
+        <span class="conv-edge" style="color:${confColor(e.confidence)}">+${e.edge}%</span>
+      </div>
+      ${signalBar('BKS', e.sportsbook_prob, 'var(--gray)', true)}
+      ${signalBar('BT', e.barttorvik_prob, 'var(--purple)', true)}
+      ${e.polymarket_prob ? signalBar('PM', e.polymarket_prob, 'var(--blue)', true) : ''}
+      ${signalBar('MDL', e.model_prob, 'var(--green)', true)}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+loadData();
+</script>
+</body>
+</html>

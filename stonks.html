@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stonks — Congress Alpha Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#08090c;--bg-card:#0e1017;--border:#1a1e2a;--text:#e8eaf0;--text-dim:#6b7394;--text-muted:#3d4460;--green:#00e87b;--amber:#ffb224;--amber-dim:#ffb22422;--font-display:'Outfit',sans-serif;--font-mono:'DM Mono',monospace}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;display:flex;flex-direction:column}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;background:#08090cee;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:28px;height:28px;background:var(--green);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.nav-logo-text{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text);letter-spacing:2px;text-transform:uppercase}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s;padding:4px 0}
+.nav-links a:hover{color:var(--green)}
+.nav-links a.active{color:var(--amber);border-bottom:2px solid var(--amber)}
+.page{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 32px 60px;text-align:center}
+.badge{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:5px 12px;border-radius:4px;display:inline-block;margin-bottom:20px;background:var(--amber-dim);color:var(--amber);border:1px solid #ffb22433}
+h1{font-size:48px;font-weight:800;letter-spacing:-1.5px;margin-bottom:12px}
+h1 span{color:var(--amber)}
+.sub{font-size:16px;color:var(--text-dim);max-width:520px;margin:0 auto 32px;line-height:1.7}
+.status{font-family:var(--font-mono);font-size:13px;color:var(--green);letter-spacing:1px}
+.status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.signal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:var(--border);border-radius:8px;overflow:hidden;max-width:600px;margin:40px auto 0}
+.signal-card{background:var(--bg-card);padding:28px 22px;text-align:left}
+.signal-card .w{font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;padding:3px 8px;border-radius:3px;display:inline-block;margin-bottom:10px;background:var(--amber-dim);color:var(--amber)}
+.signal-card .n{font-size:15px;font-weight:600;margin-bottom:6px}
+.signal-card .d{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);line-height:1.6}
+.coming{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);margin-top:40px;letter-spacing:1px}
+@media(max-width:600px){nav{padding:12px 16px}.nav-links a:not(.active){display:none}.nav-logo-text{font-size:11px;letter-spacing:1px}.nav-logo-icon{width:22px;height:22px}.page{padding:100px 16px 40px}h1{font-size:32px}.sub{font-size:14px}.signal-grid{grid-template-columns:1fr}.signal-card{padding:20px 14px}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo"><div class="nav-logo-icon"></div><span class="nav-logo-text">Edge Finder</span></a>
+  <div class="nav-links">
+    <a href="ncaab.html">NCAAB</a>
+    <a href="mlb.html">MLB</a>
+    <a href="stonks.html" class="active">Stonks</a>
+    <a href="record.html">Record</a>
+  </div>
+</nav>
+<div class="page">
+  <div class="badge">Congress Alpha Tracker · v0.3.1</div>
+  <h1>Follow the <span>insiders.</span></h1>
+  <p class="sub">Two independent signals for stock alpha. SEC Form 4 insider trades and Congressional STOCK Act filings. Cluster detection when 3+ politicians trade the same stock within 14 days.</p>
+  <div class="status"><span class="dot"></span>LIVE — 25,700+ TRADES TRACKED</div>
+  <div class="signal-grid">
+    <div class="signal-card"><div class="w">SIGNAL 1</div><div class="n">SEC Form 4</div><div class="d">Insider trades with 48hr disclosure. CEOs, directors, 10%+ holders buying their own stock.</div></div>
+    <div class="signal-card"><div class="w">SIGNAL 2</div><div class="n">STOCK Act</div><div class="d">Congressional trades with 30-45 day lag. Ranked by politician avg return, cluster detection.</div></div>
+  </div>
+  <div class="coming">Full trade explorer coming soon — v0.4 in progress</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edge Finder — Where The Market Is Wrong</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#08090c;--bg-card:#0e1017;--bg-card-hover:#141722;--border:#1a1e2a;--border-bright:#2a3045;--text:#e8eaf0;--text-dim:#6b7394;--text-muted:#3d4460;--green:#00e87b;--green-dim:#00e87b22;--green-glow:#00e87b15;--red:#ff3b5c;--red-dim:#ff3b5c22;--amber:#ffb224;--amber-dim:#ffb22422;--blue:#3b82f6;--blue-dim:#3b82f622;--purple:#a855f7;--purple-dim:#a855f722;--cyan:#06b6d4;--cyan-dim:#06b6d422;--font-display:'Outfit',sans-serif;--font-mono:'DM Mono',monospace}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.12;pointer-events:none;z-index:0}
+.glow-orb{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,var(--green-glow),transparent 70%);top:-200px;right:-100px;pointer-events:none;z-index:0;animation:orbFloat 8s ease-in-out infinite}
+.glow-orb-2{position:fixed;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,#3b82f610,transparent 70%);bottom:100px;left:-100px;pointer-events:none;z-index:0;animation:orbFloat 12s ease-in-out infinite reverse}
+@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,20px)}}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 40px;display:flex;align-items:center;justify-content:space-between;background:#08090ccc;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--green);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.nav-logo-text{font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--text);letter-spacing:2px;text-transform:uppercase}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{font-family:var(--font-mono)!important;font-size:11px!important;background:var(--green)!important;color:#08090c!important;padding:8px 18px!important;border-radius:4px;font-weight:500!important;letter-spacing:1.5px;transition:all .2s}
+.nav-cta:hover{opacity:.85;transform:translateY(-1px)}
+
+.btn-primary{font-family:var(--font-mono);font-size:13px;letter-spacing:1.5px;text-transform:uppercase;background:var(--green);color:#08090c;border:none;padding:14px 32px;border-radius:4px;cursor:pointer;font-weight:500;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--green-dim)}
+.btn-ghost{font-family:var(--font-mono);font-size:13px;letter-spacing:1.5px;text-transform:uppercase;background:transparent;color:var(--text-dim);border:1px solid var(--border-bright);padding:14px 32px;border-radius:4px;cursor:pointer;font-weight:400;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-ghost:hover{color:var(--text);border-color:var(--text-dim)}
+
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 40px 80px;max-width:1200px;margin:0 auto}
+.hero-tag{font-family:var(--font-mono);font-size:12px;color:var(--green);letter-spacing:3px;text-transform:uppercase;margin-bottom:24px;opacity:0;animation:fadeUp .6s ease forwards .2s}
+.hero-tag span{display:inline-block;background:var(--green-dim);padding:4px 12px;border-radius:3px;border:1px solid #00e87b33}
+.hero h1{font-size:clamp(48px,7vw,96px);font-weight:800;line-height:1;letter-spacing:-2px;margin-bottom:28px;opacity:0;animation:fadeUp .6s ease forwards .4s}
+.hero h1 .accent{color:var(--green)}
+.hero-sub{font-size:18px;color:var(--text-dim);max-width:560px;line-height:1.7;margin-bottom:48px;opacity:0;animation:fadeUp .6s ease forwards .6s}
+.hero-actions{display:flex;gap:16px;align-items:center;opacity:0;animation:fadeUp .6s ease forwards .8s}
+
+.ticker-strip{position:relative;z-index:1;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;overflow:hidden;background:#0a0b10}
+.ticker-inner{display:flex;gap:48px;animation:tickerScroll 40s linear infinite;width:max-content}
+.ticker-item{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:12px;color:var(--text-dim);white-space:nowrap}
+.ticker-item .sport{color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.ticker-item .pick{color:var(--text);font-weight:500}
+.ticker-item .result-w{color:var(--green);font-weight:500}
+.ticker-item .result-l{color:var(--red);font-weight:500}
+.ticker-item .result-s{color:var(--amber);font-weight:500}
+.ticker-dot{width:4px;height:4px;border-radius:50%;background:var(--text-muted);flex-shrink:0}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+.stats-banner{position:relative;z-index:1;max-width:1200px;margin:80px auto;padding:0 40px;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;opacity:0;animation:fadeUp .6s ease forwards 1s}
+.stat-cell{background:var(--bg-card);padding:28px 20px;text-align:center;transition:background .2s}
+.stat-cell:hover{background:var(--bg-card-hover)}
+.stat-value{font-family:var(--font-mono);font-size:32px;font-weight:500;color:var(--green);margin-bottom:6px}
+.stat-value.neutral{color:var(--text)}
+.stat-label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px}
+
+section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:100px 40px}
+.section-tag{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:16px}
+.section-title{font-size:42px;font-weight:700;letter-spacing:-1px;margin-bottom:16px}
+.section-desc{font-size:16px;color:var(--text-dim);max-width:560px;line-height:1.7;margin-bottom:56px}
+
+.product-section{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:100px 40px;border-top:1px solid var(--border)}
+.product-header{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-bottom:56px;align-items:start}
+.product-badge{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:3px;display:inline-block;margin-bottom:16px;font-weight:500}
+.badge-ncaab{background:var(--green-dim);color:var(--green);border:1px solid #00e87b33}
+.badge-mlb{background:var(--blue-dim);color:var(--blue);border:1px solid #3b82f633}
+.badge-stonks{background:var(--amber-dim);color:var(--amber);border:1px solid #ffb22433}
+.product-title{font-size:36px;font-weight:700;letter-spacing:-.5px;margin-bottom:12px}
+.product-desc{font-size:15px;color:var(--text-dim);line-height:1.7}
+.product-status{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:12px;letter-spacing:1px}
+.product-status .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite}
+.product-status .build-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-right:6px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.signal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px;background:var(--border);border-radius:8px;overflow:hidden}
+.signal-card{background:var(--bg-card);padding:28px 22px;transition:background .3s}
+.signal-card:hover{background:var(--bg-card-hover)}
+.signal-card-weight{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;padding:3px 8px;border-radius:3px;display:inline-block;margin-bottom:14px}
+.signal-card-name{font-size:15px;font-weight:600;margin-bottom:8px}
+.signal-card-detail{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.6}
+
+.edge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--border);border-radius:8px;overflow:hidden}
+.edge-card{background:var(--bg-card);padding:28px;transition:background .3s}
+.edge-card:hover{background:var(--bg-card-hover)}
+.edge-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.edge-matchup{font-size:14px;font-weight:600;line-height:1.4}
+.edge-conf{font-family:var(--font-mono);font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:3px;font-weight:500}
+.conf-high{background:var(--green-dim);color:var(--green)}.conf-med{background:var(--amber-dim);color:var(--amber)}.conf-low{background:var(--blue-dim);color:var(--blue)}
+.edge-pick-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+.edge-pick-label{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
+.edge-pick-value{font-family:var(--font-mono);font-size:13px;font-weight:500}
+.edge-pick-value.green{color:var(--green)}
+.edge-signals{display:flex;gap:6px;margin-top:14px;align-items:center}
+.edge-signal-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}.edge-signal-dot.off{background:var(--text-muted)}
+.edge-signal-label{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-left:4px}
+
+.trade-feed{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:var(--border);border-radius:8px;overflow:hidden}
+.trade-card{background:var(--bg-card);padding:24px;transition:background .3s}
+.trade-card:hover{background:var(--bg-card-hover)}
+.trade-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.trade-ticker{font-family:var(--font-mono);font-size:18px;font-weight:600}
+.trade-type{font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:3px}
+.trade-buy{background:var(--green-dim);color:var(--green)}.trade-sell{background:var(--red-dim);color:var(--red)}
+.trade-row{display:flex;justify-content:space-between;padding:6px 0;font-family:var(--font-mono);font-size:11px;color:var(--text-dim)}
+.trade-row .val{color:var(--text);font-weight:500}.trade-row .gain{color:var(--green);font-weight:500}
+.trade-cluster{font-family:var(--font-mono);font-size:10px;color:var(--amber);background:var(--amber-dim);padding:4px 8px;border-radius:3px;margin-top:12px;display:inline-block}
+
+.coming-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border);border-radius:8px;overflow:hidden}
+.coming-card{background:var(--bg-card);padding:36px 24px;text-align:center;transition:background .3s}
+.coming-card:hover{background:var(--bg-card-hover)}
+.coming-icon{font-size:36px;margin-bottom:14px}.coming-name{font-size:16px;font-weight:600;margin-bottom:6px}
+.coming-target{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase}
+
+.record-table-wrap{background:var(--bg-card);border-radius:8px;border:1px solid var(--border);overflow:hidden}
+.record-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:12px}
+.record-table th{text-align:left;padding:12px 16px;color:var(--text-muted);font-weight:400;letter-spacing:1.5px;text-transform:uppercase;font-size:10px;border-bottom:1px solid var(--border)}
+.record-table td{padding:13px 16px;border-bottom:1px solid var(--border);color:var(--text-dim)}
+.record-table tr:hover td{color:var(--text);background:var(--bg-card-hover)}
+.record-table .win{color:var(--green);font-weight:500}.record-table .loss{color:var(--red);font-weight:500}
+.table-footer{padding:14px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text-muted);text-align:center;border-top:1px solid var(--border);letter-spacing:1px}
+.table-footer a{color:var(--green);text-decoration:none}
+
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--border);border-radius:8px;overflow:hidden;max-width:1000px}
+.price-card{background:var(--bg-card);padding:40px 32px;transition:background .3s}
+.price-card:hover{background:var(--bg-card-hover)}
+.price-card.featured{background:#0f1520;border:1px solid var(--green);border-radius:8px;position:relative}
+.price-card.featured::before{content:'BEST VALUE';position:absolute;top:-10px;left:24px;font-family:var(--font-mono);font-size:10px;letter-spacing:2px;background:var(--green);color:#08090c;padding:3px 10px;border-radius:3px;font-weight:500}
+.price-tier{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.price-amount{font-size:44px;font-weight:800;margin-bottom:4px}
+.price-amount span{font-size:16px;font-weight:400;color:var(--text-dim)}
+.price-desc{font-size:13px;color:var(--text-dim);margin-bottom:28px;line-height:1.6}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.price-features li{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding-left:20px;position:relative;line-height:1.5}
+.price-features li::before{content:'✓';position:absolute;left:0;color:var(--green);font-weight:700}
+.price-features li.dim::before{content:'—';color:var(--text-muted)}.price-features li.dim{color:var(--text-muted)}
+
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:40px;max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.footer-left{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:1px}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s}
+.footer-links a:hover{color:var(--text)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:900px){.product-header{grid-template-columns:1fr;gap:24px}.signal-grid{grid-template-columns:repeat(2,1fr)}.edge-grid{grid-template-columns:1fr}.trade-feed{grid-template-columns:1fr}.coming-grid{grid-template-columns:repeat(2,1fr)}.stats-banner{grid-template-columns:repeat(3,1fr)}.pricing-grid{grid-template-columns:1fr;max-width:400px}nav{padding:14px 16px}.hero{padding:100px 16px 60px}section,.product-section{padding:60px 16px}.hero h1{font-size:clamp(36px,8vw,64px)}.hero-sub{font-size:15px}.section-title{font-size:32px}.product-title{font-size:28px}}
+@media(max-width:600px){.signal-grid{grid-template-columns:1fr}.coming-grid{grid-template-columns:repeat(2,1fr)}.stats-banner{grid-template-columns:repeat(2,1fr)}.nav-links a:not(.nav-cta){display:none}.hero h1{font-size:clamp(32px,10vw,48px);letter-spacing:-1px}.hero-sub{font-size:14px;max-width:100%}.hero-actions{flex-direction:column;gap:10px}.hero-actions a{text-align:center;width:100%}.btn-primary,.btn-ghost{padding:12px 24px;font-size:12px}.stat-value{font-size:24px}.stat-label{font-size:8px}.section-title{font-size:26px}.section-desc{font-size:14px}.product-title{font-size:24px}.product-desc{font-size:13px}.product-badge{font-size:9px}.signal-card-name{font-size:13px}.signal-card-detail{font-size:10px}.edge-card{padding:18px}.edge-matchup{font-size:13px}.record-table{font-size:10px}.record-table th,.record-table td{padding:8px 8px}.coming-card{padding:24px 16px}.coming-name{font-size:14px}.price-amount{font-size:32px}.price-features li{font-size:10px}.footer-left{font-size:9px}.footer-links a{font-size:9px}footer{flex-direction:column;gap:12px;text-align:center;padding:30px 16px}.ticker-item{font-size:11px}.nav-logo-text{font-size:11px;letter-spacing:1px}.nav-logo-icon{width:22px;height:22px}.nav-cta{padding:6px 14px!important;font-size:10px!important}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div><div class="glow-orb"></div><div class="glow-orb-2"></div>
+
+<nav>
+  <a href="#" class="nav-logo"><div class="nav-logo-icon"></div><span class="nav-logo-text">Edge Finder</span></a>
+  <div class="nav-links"><a href="ncaab.html">NCAAB</a><a href="mlb.html">MLB</a><a href="stonks.html">Stonks</a><a href="record.html">Record</a><a href="ncaab.html" class="nav-cta">Live Picks</a></div>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag"><span>◆ NCAAB · MLB · NFL · NBA · STONKS</span></div>
+  <h1>Find where<br>the market<br>is <span class="accent">wrong.</span></h1>
+  <p class="hero-sub">Edge Finder combines sportsbook odds, statistical models, prediction markets, and player-level analysis into convergence scores. Not tips. Not hunches. Quantified edges — sports and stocks — with a paper trail.</p>
+  <div class="hero-actions"><a href="ncaab.html" class="btn-primary">View Live Picks</a><a href="record.html" class="btn-ghost">See The Record</a></div>
+</div>
+
+<div class="ticker-strip"><div class="ticker-inner" id="ticker-inner">
+  <div class="ticker-item"><span class="sport">EDGE FINDER</span> <span class="pick">Loading recent picks…</span></div>
+</div></div>
+
+<div class="stats-banner" id="stats-banner">
+  <div class="stat-cell"><div class="stat-value" id="home-record">—</div><div class="stat-label">Model Record</div></div>
+  <div class="stat-cell"><div class="stat-value" id="home-winrate">—</div><div class="stat-label">Win Rate</div></div>
+  <div class="stat-cell"><div class="stat-value" id="home-sweet">—</div><div class="stat-label">Sweet Spot (0-10)</div></div>
+  <div class="stat-cell"><div class="stat-value neutral" id="home-models">3</div><div class="stat-label">Active Models</div></div>
+  <div class="stat-cell"><div class="stat-value neutral" id="home-trades">25K+</div><div class="stat-label">Trades Tracked</div></div>
+</div>
+
+<!-- NCAAB -->
+<div class="product-section reveal" id="ncaab">
+  <div class="product-header">
+    <div>
+      <div class="product-badge badge-ncaab">NCAAB Edge Finder · v3.2</div>
+      <div class="product-title">College basketball.<br>Four signals. One edge.</div>
+      <div class="product-desc">The model ingests sportsbook consensus, Barttorvik statistical ratings, player impact analysis, and Polymarket pricing. When all signals converge and the market disagrees — that's the edge. Every pick comes with a confidence score, Kelly sizing, and full signal breakdown.</div>
+      <div class="product-status"><span class="live-dot"></span>LIVE — MARCH MADNESS READY</div>
+    </div>
+    <div>
+      <div class="signal-grid">
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--green-dim);color:var(--green)">55% WEIGHT</div><div class="signal-card-name">Sportsbook Odds</div><div class="signal-card-detail">Consensus moneylines across US books → implied probability</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--green-dim);color:var(--green)">45% WEIGHT</div><div class="signal-card-name">Barttorvik Model</div><div class="signal-card-detail">T-Rank adjusted for tempo, efficiency, schedule strength</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--cyan-dim);color:var(--cyan)">ADDITIVE</div><div class="signal-card-name">Player Impact</div><div class="signal-card-detail">200+ teams cached. Generational / Dominant / Star / Key tiers</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--amber-dim);color:var(--amber)">MARKET CHECK</div><div class="signal-card-name">Polymarket</div><div class="signal-card-detail">Prediction market pricing — the final edge validator</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="edge-grid" id="home-edges">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">Loading today's edges…</div>
+  </div>
+  <div style="text-align:center;margin-top:28px"><a href="ncaab.html" class="btn-primary" style="font-size:12px;padding:12px 28px">View All Picks →</a></div>
+</div>
+
+<!-- MLB -->
+<div class="product-section reveal" id="mlb">
+  <div class="product-header">
+    <div>
+      <div class="product-badge badge-mlb">MLB Edge Finder · v0.4</div>
+      <div class="product-title">Baseball.<br>Eight signals deep.</div>
+      <div class="product-desc">The deepest signal stack in the lineup. Starting pitcher matchups, bullpen quality, park factors, platoon splits, BABIP regression, sprint speed — eight independent signals weighted by predictive power. Moneyline and First 5 Innings (F5) bet types.</div>
+      <div class="product-status"><span class="build-dot"></span>LAUNCHING OPENING DAY · MAR 26</div>
+    </div>
+    <div>
+      <div class="signal-grid">
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">28%</div><div class="signal-card-name">SP Matchup</div><div class="signal-card-detail">Starting pitcher composite via FanGraphs + Statcast pitch data</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">21%</div><div class="signal-card-name">Sportsbook</div><div class="signal-card-detail">Consensus moneyline implied probability</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">14%</div><div class="signal-card-name">Bullpen Quality</div><div class="signal-card-detail">Reliever ratings, usage patterns, fatigue tracking</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">10%</div><div class="signal-card-name">Injury Impact</div><div class="signal-card-detail">Active IL, day-to-day, lineup impact scoring</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">8%</div><div class="signal-card-name">Park Factors</div><div class="signal-card-detail">Venue-specific run scoring adjustments</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">7%</div><div class="signal-card-name">Platoon Splits</div><div class="signal-card-detail">L/R matchup advantages across the lineup</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">7%</div><div class="signal-card-name">BABIP Regression</div><div class="signal-card-detail">Luck-adjusted batting average on balls in play</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--blue-dim);color:var(--blue)">5%</div><div class="signal-card-name">Sprint Speed</div><div class="signal-card-detail">Baserunning and defensive range factor</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STONKS -->
+<div class="product-section reveal" id="stonks">
+  <div class="product-header">
+    <div>
+      <div class="product-badge badge-stonks">Congress Alpha Tracker · v0.3</div>
+      <div class="product-title">Stonks.<br>Follow the insiders.</div>
+      <div class="product-desc">Two independent signals for stock alpha. SEC Form 4 insider trades (48hr disclosure) surface corporate insiders buying their own stock. Congressional STOCK Act filings reveal what politicians trade on. When 3+ politicians buy the same stock within 14 days — that's a cluster signal.</div>
+      <div class="product-status"><span class="live-dot"></span>LIVE — 25,700+ TRADES TRACKED</div>
+    </div>
+    <div>
+      <div class="signal-grid">
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--amber-dim);color:var(--amber)">SIGNAL 1</div><div class="signal-card-name">SEC Form 4</div><div class="signal-card-detail">Insider trades with 48hr disclosure. CEOs, directors, and 10%+ holders buying their own stock.</div></div>
+        <div class="signal-card"><div class="signal-card-weight" style="background:var(--amber-dim);color:var(--amber)">SIGNAL 2</div><div class="signal-card-name">STOCK Act Filings</div><div class="signal-card-detail">Congressional trades with 30-45 day lag. Ranked by politician return, cluster detection.</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="trade-feed" id="stonks-feed">
+    <div class="trade-card"><div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">Trade feed coming soon — full explorer in v0.4</div></div>
+    <div class="trade-card"><div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">25,700+ trades tracked · 435 insider · 25,000+ congress</div></div>
+  </div>
+</div>
+
+<!-- COMING SOON -->
+<div class="product-section reveal" id="coming">
+  <div class="section-tag">Coming Soon</div>
+  <div class="section-title" style="margin-bottom:48px">Every market has edges.</div>
+  <div class="coming-grid">
+    <div class="coming-card"><div class="coming-icon">🏈</div><div class="coming-name">NFL</div><div class="coming-target">Fall 2026</div></div>
+    <div class="coming-card"><div class="coming-icon">🏀</div><div class="coming-name">NBA</div><div class="coming-target">2026-27 Season</div></div>
+    <div class="coming-card"><div class="coming-icon">🏟️</div><div class="coming-name">NCAAF</div><div class="coming-target">Fall 2026</div></div>
+    <div class="coming-card"><div class="coming-icon">◆</div><div class="coming-name">More TBD</div><div class="coming-target">Wherever edges exist</div></div>
+  </div>
+</div>
+
+<!-- TRACK RECORD -->
+<section id="record" class="reveal" style="border-top:1px solid var(--border)">
+  <div class="section-tag">Track Record</div>
+  <div class="section-title">Every pick. Every result.</div>
+  <div class="section-desc">Full transparency. No deleted picks, no hidden losses. Every edge published with a timestamp and tracked to completion.</div>
+  <div class="record-table-wrap"><table class="record-table">
+    <thead><tr><th>Date</th><th>Model</th><th>Game</th><th>Pick</th><th>Edge</th><th>Conf</th><th>Result</th></tr></thead>
+    <tbody id="record-tbody">
+      <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);font-family:var(--font-mono)">Loading track record…</td></tr>
+    </tbody>
+  </table><div class="table-footer" id="record-footer">LOADING · <a href="ncaab.html">VIEW FULL LOG →</a></div></div>
+</section>
+
+<!-- ACCESS -->
+<section id="pricing" class="reveal" style="border-top:1px solid var(--border)">
+  <div class="section-tag">Access</div>
+  <div class="section-title">Free. For now.</div>
+  <div class="section-desc">Edge Finder is in public beta. Every model, every signal, every pick — completely free while we build and prove the track record. Paid tiers come later.</div>
+  <div class="pricing-grid" style="grid-template-columns:1fr;max-width:500px">
+    <div class="price-card featured" style="border-color:var(--green)">
+      <div class="price-tier">Public Beta</div>
+      <div class="price-amount">$0 <span>/ free</span></div>
+      <div class="price-desc">Full access to every model and signal. No credit card. No catch. We're building in public and tracking every pick.</div>
+      <ul class="price-features"><li>NCAAB Edge Finder — live now</li><li>MLB Edge Finder — Opening Day Mar 26</li><li>Stonks — insider + congress trades</li><li>Full signal breakdown per pick</li><li>Kelly Criterion sizing</li><li>Complete bet log + P&L</li><li>Polymarket divergence alerts</li><li>All future models included</li></ul>
+      <a href="ncaab.html" class="btn-primary" style="display:block;text-align:center">View Live Model</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div style="position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 40px 100px">
+  <div class="reveal" style="background:linear-gradient(135deg,#0f1520,#0e1017);border:1px solid var(--border-bright);border-radius:12px;padding:60px;text-align:center">
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--green);letter-spacing:3px;text-transform:uppercase;margin-bottom:20px">The books set the line</div>
+    <div style="font-size:36px;font-weight:700;margin-bottom:16px">The model finds the edge.</div>
+    <div style="font-size:15px;color:var(--text-dim);margin-bottom:36px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.7">Join the bettors and traders who use data — not hunches — to find where the market is wrong.</div>
+    <div style="display:flex;gap:16px;justify-content:center"><a href="ncaab.html" class="btn-primary">View Live Model</a><a href="record.html" class="btn-ghost">See Track Record</a></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-left">© 2026 EDGE FINDER · NOT FINANCIAL ADVICE · 21+ ONLY · GAMBLE RESPONSIBLY</div>
+  <div class="footer-links"><a href="#">Discord</a><a href="#">X / Twitter</a><a href="#">Terms</a></div>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+function shortTeam(s){return s.replace(/ (Ramblers|Spiders|Longhorns|Rebels|Hoosiers|Wildcats|Cowboys|Golden Eagles|Musketeers|Bears|Hornets|Lumberjacks|Tigers|Green Wave|Cardinals|Mustangs|Huskies|Trojans|Panthers|Bulldogs|Hawks|Bobcats|Terriers|Owls|Bruins|Mountaineers|Billikens|Monarchs|Blue Hens|Aggies|Cougars|Razorbacks|Crimson Tide|Yellow Jackets|Demon Deacons|Blue Devils|Wolfpack|Tar Heels|Cavaliers|Hokies|Seminoles|Hurricanes|Orange|Fighting Irish|Spartans|Wolverines|Hawkeyes|Cornhuskers|Boilermakers|Buckeyes|Badgers|Golden Gophers|Illini|Nittany Lions|Terrapins|Scarlet Knights|Jayhawks|Cyclones|Sooners|Red Raiders|Horned Frogs|Bearcats|Bison|Thundering Herd|Flyers|Peacocks|Gaels|Phoenix|Redbirds|Shockers|Hilltoppers|Bonnies|Explorers|Dukes|Flames|Gamecocks|Volunteers|Gators)$/i,'').trim()}
+
+async function loadHomeData() {
+  try {
+    // ─── LOAD EDGES (top 3 for hero cards) ───
+    const edgeResp = await fetch('data/latest_edges.json?t=' + Date.now());
+    if (edgeResp.ok) {
+      const edgeData = await edgeResp.json();
+      const container = document.getElementById('home-edges');
+      if (edgeData.edges && edgeData.edges.length > 0) {
+        const sorted = [...edgeData.edges].sort((a,b) => (a.bt_divergence||99) - (b.bt_divergence||99));
+        const top3 = sorted.slice(0, 3);
+        container.innerHTML = top3.map(e => {
+          const parts = e.game.split(' @ ');
+          const away = shortTeam(parts[0]||'');
+          const home = shortTeam(parts[1]||'');
+          const pick = shortTeam(e.side||'');
+          const odds = e.best_ml > 0 ? '+'+e.best_ml : e.best_ml;
+          const confClass = e.confidence === 'HIGH' ? 'conf-high' : e.confidence === 'MEDIUM' ? 'conf-med' : 'conf-low';
+          const signals = [true, true, e.polymarket_prob > 0, !!e.star_note];
+          const sigCount = signals.filter(Boolean).length;
+          return `<div class="edge-card">
+            <div class="edge-header"><div class="edge-matchup">${away}<br>@ ${home}</div><div class="edge-conf ${confClass}">${e.confidence}</div></div>
+            <div class="edge-pick-row"><span class="edge-pick-label">Pick</span><span class="edge-pick-value">${pick} ML</span></div>
+            <div class="edge-pick-row"><span class="edge-pick-label">Edge</span><span class="edge-pick-value green">+${e.edge.toFixed(1)}%</span></div>
+            <div class="edge-pick-row"><span class="edge-pick-label">ML / Kelly</span><span class="edge-pick-value">${odds} / ${e.kelly_pct.toFixed(1)}%</span></div>
+            <div class="edge-signals">${signals.map(s => `<div class="edge-signal-dot${s?'':' off'}"></div>`).join('')}<span class="edge-signal-label">${sigCount}/4 signals</span></div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // ─── LOAD ALL GAMES FILES (for accurate stats across all data) ───
+    const gameFiles = ['all_games_2026-03-07.json','all_games_2026-03-08.json','all_games_2026-03-09.json','all_games_2026-03-10.json','all_games_2026-03-11.json'];
+    const allGamesData = await Promise.all(gameFiles.map(async f => {
+      try { const r = await fetch('data/'+f+'?t='+Date.now()); return r.ok ? await r.json() : null; } catch { return null; }
+    }));
+    
+    // Build comprehensive stats from all_games (more complete than pick_history alone)
+    let totalW = 0, totalL = 0, sw = 0, sl = 0;
+    const seenGames = new Set();
+    const allScoredPicks = [];
+    
+    allGamesData.forEach(gd => {
+      if (!gd?.games) return;
+      gd.games.forEach(g => {
+        if (!g.has_edge || !g.side) return;
+        // Dedup by normalized key
+        const key = (g.game||'').toLowerCase() + '@' + (g.game_date||'');
+        if (seenGames.has(key)) return;
+        seenGames.add(key);
+        
+        // Compute pick_correct if not set
+        let correct = g.pick_correct;
+        if (correct == null && g.winner && g.side) {
+          const pickLow = g.side.toLowerCase();
+          const winLow = g.winner.toLowerCase();
+          correct = pickLow.includes(winLow.slice(0,8)) || winLow.includes(pickLow.slice(0,8));
+        }
+        
+        if (correct === true) totalW++;
+        else if (correct === false) totalL++;
+        
+        // Sweet spot: BT divergence 0-10
+        const bt = g.side === g.home ? g.bt_divergence_home : g.bt_divergence_away;
+        if (bt != null && bt <= 10) {
+          if (correct === true) sw++;
+          else if (correct === false) sl++;
+        }
+        
+        // Collect for record table
+        if (correct === true || correct === false) {
+          allScoredPicks.push({
+            date: g.game_date || '',
+            game: shortTeam(g.game || ''),
+            pick: shortTeam(g.side || '') + ' ML ' + (g.side === g.home ? (g.home_ml > 0 ? '+'+g.home_ml : g.home_ml) : (g.away_ml > 0 ? '+'+g.away_ml : g.away_ml)),
+            edge: g.edge,
+            confidence: g.confidence,
+            result: correct
+          });
+        }
+      });
+    });
+    
+    // Also check pick_history for picks not in all_games
+    const histResp = await fetch('data/pick_history.json?t=' + Date.now());
+    if (histResp.ok) {
+      const hist = await histResp.json();
+      
+      if (hist.daily_results) {
+        Object.entries(hist.daily_results).forEach(([date, day]) => {
+          (day.picks || []).forEach(p => {
+            if (!p.has_edge) return;
+            const key = (p.game||'').toLowerCase() + '@' + date;
+            if (seenGames.has(key)) return;
+            seenGames.add(key);
+            
+            if (p.pick_correct === true) totalW++;
+            else if (p.pick_correct === false) totalL++;
+            
+            if (p.bt_divergence != null && p.bt_divergence <= 10) {
+              if (p.pick_correct === true) sw++;
+              else if (p.pick_correct === false) sl++;
+            }
+            
+            if (p.pick_correct === true || p.pick_correct === false) {
+              allScoredPicks.push({
+                date: date,
+                game: shortTeam(p.game || ''),
+                pick: shortTeam(p.pick || '') + ' ML ' + (p.best_ml > 0 ? '+'+p.best_ml : p.best_ml),
+                edge: p.edge,
+                confidence: p.confidence,
+                result: p.pick_correct
+              });
+            }
+          });
+        });
+      }
+    }
+    
+    // Update stats
+    document.getElementById('home-record').textContent = (totalW+totalL) > 0 ? totalW+'-'+totalL : '—';
+    const wr = (totalW+totalL) > 0 ? (totalW/(totalW+totalL)*100) : 0;
+    document.getElementById('home-winrate').textContent = (totalW+totalL) > 0 ? wr.toFixed(1)+'%' : '—';
+    document.getElementById('home-sweet').textContent = (sw+sl > 0) ? sw+'-'+sl+' ('+(sw/(sw+sl)*100).toFixed(0)+'%)' : '—';
+    
+    // Record table — most recent 8 scored picks
+    allScoredPicks.sort((a,b) => b.date.localeCompare(a.date));
+    const recent = allScoredPicks.slice(0, 8);
+    const tbody = document.getElementById('record-tbody');
+    if (recent.length) {
+      tbody.innerHTML = recent.map(r => {
+        const dateStr = r.date.slice(5).replace('-', '/');
+        const confColor = r.confidence === 'HIGH' ? 'var(--green)' : r.confidence === 'MEDIUM' ? 'var(--amber)' : 'var(--blue)';
+        const confLabel = (r.confidence || 'LOW').replace('MEDIUM','MED');
+        return `<tr>
+          <td>${dateStr}</td>
+          <td><span style="color:var(--green)">NCAAB</span></td>
+          <td>${r.game}</td>
+          <td>${r.pick}</td>
+          <td style="color:var(--green)">+${r.edge ? r.edge.toFixed(1) : '?'}%</td>
+          <td><span style="color:${confColor}">${confLabel}</span></td>
+          <td class="${r.result ? 'win' : 'loss'}">${r.result ? 'WIN' : 'LOSS'}</td>
+        </tr>`;
+      }).join('');
+    }
+    document.getElementById('record-footer').innerHTML = 
+      `SHOWING ${recent.length} OF ${seenGames.size} TRACKED PICKS · <a href="record.html">VIEW FULL RECORD →</a>`;
+      
+    // ─── DYNAMIC TICKER ───
+    const ticker = document.getElementById('ticker-inner');
+    let items = [];
+    
+    allScoredPicks.forEach(r => {
+      const cls = r.result ? 'result-w' : 'result-l';
+      const label = r.result ? 'WIN' : 'LOSS';
+      items.push(`<div class="ticker-item"><span class="sport">NCAAB</span> <span class="pick">${r.pick}</span> <span class="${cls}">${label}</span></div>`);
+    });
+    
+    // Add MLB placeholder
+    items.push(`<div class="ticker-item"><span class="sport">MLB</span> <span class="pick">Opening Day Mar 26</span> <span class="result-s">BUILDING</span></div>`);
+    
+    if (items.length > 0) {
+      const combined = items.join('<div class="ticker-dot"></div>');
+      ticker.innerHTML = combined + '<div class="ticker-dot"></div>' + combined;
+    }
+  } catch(e) { console.error('Home data load error:', e); }
+}
+loadHomeData();
+</script>
+</body>
+</html>

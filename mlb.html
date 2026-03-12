@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Edge Finder — Coming Soon</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#08090c;--bg-card:#0e1017;--border:#1a1e2a;--text:#e8eaf0;--text-dim:#6b7394;--text-muted:#3d4460;--green:#00e87b;--blue:#3b82f6;--blue-dim:#3b82f622;--amber:#ffb224;--font-display:'Outfit',sans-serif;--font-mono:'DM Mono',monospace}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;display:flex;flex-direction:column}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;background:#08090cee;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:28px;height:28px;background:var(--green);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.nav-logo-text{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text);letter-spacing:2px;text-transform:uppercase}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s;padding:4px 0}
+.nav-links a:hover{color:var(--green)}
+.nav-links a.active{color:var(--blue);border-bottom:2px solid var(--blue)}
+.page{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 32px 60px;text-align:center}
+.badge{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:5px 12px;border-radius:4px;display:inline-block;margin-bottom:20px;background:var(--blue-dim);color:var(--blue);border:1px solid #3b82f633}
+h1{font-size:48px;font-weight:800;letter-spacing:-1.5px;margin-bottom:12px}
+h1 span{color:var(--blue)}
+.sub{font-size:16px;color:var(--text-dim);max-width:500px;margin:0 auto 32px;line-height:1.7}
+.countdown{font-family:var(--font-mono);font-size:14px;color:var(--amber);letter-spacing:1px}
+.signal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border);border-radius:8px;overflow:hidden;max-width:900px;margin:40px auto 0}
+.signal-card{background:var(--bg-card);padding:24px 18px;text-align:left}
+.signal-card .w{font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;padding:3px 8px;border-radius:3px;display:inline-block;margin-bottom:10px;background:var(--blue-dim);color:var(--blue)}
+.signal-card .n{font-size:14px;font-weight:600;margin-bottom:4px}
+.signal-card .d{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);line-height:1.5}
+@media(max-width:700px){.signal-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){nav{padding:12px 16px}.nav-links a:not(.active){display:none}.nav-logo-text{font-size:11px;letter-spacing:1px}.nav-logo-icon{width:22px;height:22px}.page{padding:100px 16px 40px}h1{font-size:32px}.sub{font-size:14px}.signal-grid{grid-template-columns:1fr}.signal-card{padding:18px 14px}.countdown{font-size:12px}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo"><div class="nav-logo-icon"></div><span class="nav-logo-text">Edge Finder</span></a>
+  <div class="nav-links">
+    <a href="ncaab.html">NCAAB</a>
+    <a href="mlb.html" class="active">MLB</a>
+    <a href="stonks.html">Stonks</a>
+    <a href="record.html">Record</a>
+  </div>
+</nav>
+<div class="page">
+  <div class="badge">MLB Edge Finder · v0.4.1</div>
+  <h1>Eight signals. <span>One edge.</span></h1>
+  <p class="sub">The deepest signal stack in the lineup. SP matchups, bullpen quality, park factors, platoon splits, BABIP regression, sprint speed — launching Opening Day.</p>
+  <div class="countdown">⏱ LAUNCHING MARCH 26, 2026 — OPENING DAY</div>
+  <div class="signal-grid">
+    <div class="signal-card"><div class="w">28%</div><div class="n">SP Matchup</div><div class="d">Starting pitcher composite via FanGraphs + Statcast</div></div>
+    <div class="signal-card"><div class="w">21%</div><div class="n">Sportsbook</div><div class="d">Consensus ML implied probability</div></div>
+    <div class="signal-card"><div class="w">14%</div><div class="n">Bullpen</div><div class="d">Reliever ratings, usage, fatigue</div></div>
+    <div class="signal-card"><div class="w">10%</div><div class="n">Injury</div><div class="d">Active IL, day-to-day, lineup impact</div></div>
+    <div class="signal-card"><div class="w">8%</div><div class="n">Park Factors</div><div class="d">Venue-specific run scoring adj.</div></div>
+    <div class="signal-card"><div class="w">7%</div><div class="n">Platoon</div><div class="d">L/R matchup advantages</div></div>
+    <div class="signal-card"><div class="w">7%</div><div class="n">BABIP</div><div class="d">Luck-adjusted batting avg on balls in play</div></div>
+    <div class="signal-card"><div class="w">5%</div><div class="n">Sprint Speed</div><div class="d">Baserunning + defensive range</div></div>
+  </div>
+</div>
+</body>
+</html>
